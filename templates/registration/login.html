@@ -1,124 +1,618 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Paper Trade — Login</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Sign In — TradePilot</title>
+  <link rel="icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --orange: #ff830f;
-      --orange-dark: #e67000;
-      --text: #0f172a;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --bg: #f1f5f9;
-      --card: #ffffff;
+      --bg:       #07090f;
+      --s1:       #0d1321;
+      --s2:       #111a2e;
+      --s3:       #1a2540;
+      --border:   rgba(255,255,255,.07);
+      --border2:  rgba(255,255,255,.12);
+      --text:     #edf2f7;
+      --text2:    #7e95b5;
+      --text3:    #3d5470;
+      --orange:   #ff7a00;
+      --orange-d: #e06800;
+      --green:    #00c896;
+      --red:      #ff3b5c;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
     body {
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
+      font-size: 13px;
+      display: flex;
       min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      width: 46%;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0d1525 0%, #07090f 60%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 40px 48px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* animated grid lines */
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,122,0,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,122,0,.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridscroll 20s linear infinite;
+    }
+    @keyframes gridscroll {
+      0%   { background-position: 0 0; }
+      100% { background-position: 48px 48px; }
+    }
+
+    /* glow blob */
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -120px;
+      left: -80px;
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(ellipse at center, rgba(255,122,0,.14) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .lp-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+      animation: fadeup .5s ease both;
+    }
+    .lp-logo {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+    }
+    .lp-brand-text span {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.4px;
+    }
+    .lp-brand-text small {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--orange);
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+
+    .lp-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .lp-tagline {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 3.2vw, 42px);
+      font-weight: 800;
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 20px;
+      animation: fadeup .5s .1s ease both;
+    }
+    .lp-tagline em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--orange), #ffb347);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lp-desc {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 320px;
+      margin-bottom: 36px;
+      animation: fadeup .5s .2s ease both;
+    }
+
+    /* stat pills */
+    .lp-stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      animation: fadeup .5s .3s ease both;
+    }
+    .lp-stat {
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+    .lp-stat-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 2px;
+    }
+    .lp-stat-lbl { font-size: 11px; color: var(--text3); font-weight: 500; }
+
+    /* ticker strip */
+    .ticker-wrap {
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      margin-top: 32px;
+      animation: fadeup .5s .4s ease both;
+    }
+    .ticker {
+      display: flex;
+      gap: 24px;
+      animation: ticker 18s linear infinite;
+      white-space: nowrap;
+    }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .tick-item {
+      font-size: 12px; font-weight: 600;
+      color: var(--text3);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tick-item .sym { color: var(--text2); }
+    .tick-item .up  { color: var(--green); }
+    .tick-item .dn  { color: var(--red); }
+
+    .lp-footer {
+      position: relative;
+      z-index: 1;
+      font-size: 11px;
+      color: var(--text3);
+      animation: fadeup .5s .5s ease both;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 40px 32px;
+      background: var(--bg);
+      position: relative;
+      overflow-y: auto;
     }
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 40px 36px;
+
+    .right-panel::before {
+      content: '';
+      position: absolute;
+      top: -200px; right: -200px;
+      width: 500px; height: 500px;
+      background: radial-gradient(ellipse, rgba(255,122,0,.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .form-box {
       width: 100%;
-      max-width: 380px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      max-width: 400px;
+      position: relative;
+      z-index: 1;
+      animation: fadeup .5s .15s ease both;
     }
-    .brand {
-      font-size: 22px;
+
+    .form-eyebrow {
+      font-size: 10px;
       font-weight: 700;
-      color: var(--text);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 10px;
+    }
+    .form-heading {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.4px;
       margin-bottom: 6px;
     }
-    .brand em { color: var(--orange); font-style: normal; }
-    .subtitle {
+    .form-subtext {
       font-size: 13px;
-      color: var(--muted);
+      color: var(--text2);
+      margin-bottom: 32px;
+    }
+
+    /* error block */
+    .form-errors {
+      background: rgba(255,59,92,.09);
+      border: 1px solid rgba(255,59,92,.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #ffaab8;
+    }
+    .form-errors ul { list-style: none; }
+    .form-errors li::before { content: '⚠ '; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 8px;
+    }
+
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      display: flex;
+    }
+    .input-icon svg { width: 16px; height: 16px; }
+
+    .form-input {
+      width: 100%;
+      background: var(--s1);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 13px 44px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      transition: border .15s, box-shadow .15s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,122,0,.12);
+    }
+    .form-input::placeholder { color: var(--text3); }
+
+    .pw-toggle {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text3); cursor: pointer;
+      display: flex; align-items: center;
+      transition: color .15s;
+      padding: 0;
+    }
+    .pw-toggle:hover { color: var(--text2); }
+    .pw-toggle svg { width: 17px; height: 17px; }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 12px;
+    }
+    .remember {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--text2); cursor: pointer;
+    }
+    .remember input[type=checkbox] {
+      accent-color: var(--orange);
+      width: 15px; height: 15px;
+    }
+    .forgot-link {
+      font-size: 12px; font-weight: 600;
+      color: var(--orange);
+      text-decoration: none;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--orange), var(--orange-d, #e06800));
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      letter-spacing: .2px;
+      transition: opacity .15s, transform .1s;
+      box-shadow: 0 4px 24px rgba(255,122,0,.35);
+      margin-bottom: 20px;
+    }
+    .btn-submit:hover  { opacity: .88; }
+    .btn-submit:active { transform: scale(.98); }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--border2);
+    }
+    .divider span { font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+    .btn-google {
+      width: 100%;
+      background: var(--s1);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      color: var(--text2);
+      font-size: 13px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      padding: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all .15s;
       margin-bottom: 28px;
     }
-    .error-list {
-      background: #fee2e2;
-      border: 1px solid #fca5a5;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 18px;
+    .btn-google:hover { border-color: var(--text2); color: var(--text); }
+    .btn-google svg { width: 18px; height: 18px; }
+
+    .form-footer {
+      text-align: center;
       font-size: 13px;
-      color: #dc2626;
+      color: var(--text2);
     }
-    label {
-      display: block;
-      font-size: 12px;
+    .form-footer a {
+      color: var(--orange);
       font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 6px;
+      text-decoration: none;
     }
-    input[type="text"], input[type="password"] {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 14px;
-      color: var(--text);
-      background: #f8fafc;
-      outline: none;
-      transition: border-color .15s;
-      margin-bottom: 18px;
+    .form-footer a:hover { text-decoration: underline; }
+
+    @keyframes fadeup {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    input[type="text"]:focus, input[type="password"]:focus {
-      border-color: var(--orange);
-      background: #fff;
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      body { flex-direction: column; overflow: auto; }
+      .left-panel {
+        width: 100%; min-height: auto;
+        padding: 32px 24px 28px;
+      }
+      .lp-body { padding: 24px 0 0; }
+      .lp-tagline { font-size: 26px; }
+      .lp-stats { display: none; }
+      .ticker-wrap { display: none; }
+      .right-panel { padding: 32px 20px 40px; }
     }
-    button[type="submit"] {
-      width: 100%;
-      padding: 11px;
-      background: var(--orange);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    button[type="submit"]:hover { background: var(--orange-dark); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="brand">Findoc <em>Paper Trade</em></div>
-    <div class="subtitle">Sign in to your account</div>
+
+<!-- ── LEFT PANEL ── -->
+<div class="left-panel">
+  <div class="lp-brand">
+    <img
+      src="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186"
+      alt="TradePilot"
+      class="lp-logo"
+    >
+    <div class="lp-brand-text">
+      <span>TradePilot</span>
+      <small>Paper Trading</small>
+    </div>
+  </div>
+
+  <div class="lp-body">
+    <h1 class="lp-tagline">
+      Trade smarter.<br>
+      Risk <em>nothing.</em><br>
+      Learn everything.
+    </h1>
+    <p class="lp-desc">
+      Practice equity and F&amp;O trading with ₹10,00,000 in virtual capital.
+      Real market data. Zero real risk.
+    </p>
+
+    <div class="lp-stats">
+      <div class="lp-stat">
+        <div class="lp-stat-val">₹10L</div>
+        <div class="lp-stat-lbl">Virtual Capital</div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat-val">Real-time</div>
+        <div class="lp-stat-lbl">Market Data</div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat-val">0 Risk</div>
+        <div class="lp-stat-lbl">Paper Trading</div>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker">
+        <!-- doubled for seamless loop -->
+        <div class="tick-item"><span class="sym">RELIANCE</span><span class="up">▲ 2,892.40 +1.2%</span></div>
+        <div class="tick-item"><span class="sym">TCS</span><span class="up">▲ 3,541.10 +0.8%</span></div>
+        <div class="tick-item"><span class="sym">HDFC Bank</span><span class="dn">▼ 1,623.55 −0.4%</span></div>
+        <div class="tick-item"><span class="sym">NIFTY 50</span><span class="up">▲ 22,450 +0.6%</span></div>
+        <div class="tick-item"><span class="sym">INFY</span><span class="up">▲ 1,478.90 +1.1%</span></div>
+        <div class="tick-item"><span class="sym">BEL</span><span class="up">▲ 431.70 +1.1%</span></div>
+        <div class="tick-item"><span class="sym">SENSEX</span><span class="dn">▼ 73,880 −0.2%</span></div>
+        <div class="tick-item"><span class="sym">RELIANCE</span><span class="up">▲ 2,892.40 +1.2%</span></div>
+        <div class="tick-item"><span class="sym">TCS</span><span class="up">▲ 3,541.10 +0.8%</span></div>
+        <div class="tick-item"><span class="sym">HDFC Bank</span><span class="dn">▼ 1,623.55 −0.4%</span></div>
+        <div class="tick-item"><span class="sym">NIFTY 50</span><span class="up">▲ 22,450 +0.6%</span></div>
+        <div class="tick-item"><span class="sym">INFY</span><span class="up">▲ 1,478.90 +1.1%</span></div>
+        <div class="tick-item"><span class="sym">BEL</span><span class="up">▲ 431.70 +1.1%</span></div>
+        <div class="tick-item"><span class="sym">SENSEX</span><span class="dn">▼ 73,880 −0.2%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lp-footer">
+    © 2025 TradePilot. All rights reserved. &nbsp;·&nbsp; Paper trading for education only.
+  </div>
+</div>
+
+<!-- ── RIGHT PANEL (Login Form) ── -->
+<div class="right-panel">
+  <div class="form-box">
+
+    <div class="form-eyebrow">Secure Login</div>
+    <h2 class="form-heading">Welcome back</h2>
+    <p class="form-subtext">Sign in to your paper trading account</p>
 
     {% if form.errors %}
-    <div class="error-list">Invalid username or password. Please try again.</div>
+    <div class="form-errors">
+      <ul>
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
     {% endif %}
 
-    <form method="post">
+    {% if messages %}
+    <div class="form-errors" style="background:rgba(0,200,150,.09);border-color:rgba(0,200,150,.3);color:#5eead4;">
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
-      <label for="id_username">Username</label>
-      <input type="text" id="id_username" name="username" autofocus autocomplete="username">
-
-      <label for="id_password">Password</label>
-      <input type="password" id="id_password" name="password" autocomplete="current-password">
-
-      {% if next %}
       <input type="hidden" name="next" value="{{ next }}">
-      {% endif %}
 
-      <button type="submit">Sign In</button>
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label" for="id_username">Username</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </span>
+          <input
+            class="form-input"
+            type="text"
+            id="id_username"
+            name="username"
+            placeholder="Enter your username"
+            autocomplete="username"
+            value="{{ form.username.value|default:'' }}"
+            required
+          >
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label" for="id_password">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+          </span>
+          <input
+            class="form-input"
+            type="password"
+            id="id_password"
+            name="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          >
+          <button type="button" class="pw-toggle" onclick="togglePassword()" aria-label="Toggle password">
+            <svg id="eye-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember me + Forgot -->
+      <div class="form-row">
+        <label class="remember">
+          <input type="checkbox" name="remember_me" id="remember_me">
+          Remember me
+        </label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-submit">Sign in to TradePilot</button>
     </form>
+
+    <div class="divider"><span>or continue with</span></div>
+
+    <button class="btn-google" type="button">
+      <!-- Google G icon -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+
+    <div class="form-footer">
+      Don't have an account? <a href="#">Contact your administrator</a>
+    </div>
+
   </div>
+</div>
+
+<script>
+  function togglePassword() {
+    const input = document.getElementById('id_password');
+    const icon  = document.getElementById('eye-icon');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.innerHTML = isHidden
+      ? `<line x1="1" y1="1" x2="23" y2="23"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><path d="M6.53 6.53A10.72 10.72 0 001 12s4 8 11 8a9.74 9.74 0 005.39-1.61"/>`
+      : `<path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>`;
+  }
+</script>
+
 </body>
 </html>

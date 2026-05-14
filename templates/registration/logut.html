@@ -1,0 +1,254 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Logged Out — TradePilot</title>
+  <link rel="icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #07090f;
+      --s1:       #0d1321;
+      --s2:       #111a2e;
+      --s3:       #1a2540;
+      --border:   rgba(255,255,255,.07);
+      --border2:  rgba(255,255,255,.12);
+      --text:     #edf2f7;
+      --text2:    #7e95b5;
+      --text3:    #3d5470;
+      --orange:   #ff7a00;
+      --orange-d: #e06800;
+      --green:    #00c896;
+      --red:      #ff3b5c;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* animated grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,122,0,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,122,0,.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      animation: gridscroll 24s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes gridscroll {
+      0%   { background-position: 0 0; }
+      100% { background-position: 48px 48px; }
+    }
+
+    /* glow top */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 500px;
+      background: radial-gradient(ellipse, rgba(255,122,0,.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--s1);
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      padding: 52px 48px 44px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      animation: popIn .45s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.92) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* lock icon circle */
+    .icon-ring {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,122,0,.18), rgba(255,122,0,.06));
+      border: 1px solid rgba(255,122,0,.3);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+      animation: fadeup .4s .1s ease both;
+    }
+    .icon-ring svg { width: 30px; height: 30px; color: var(--orange); }
+
+    .card-eyebrow {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--orange); margin-bottom: 10px;
+      animation: fadeup .4s .15s ease both;
+    }
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px; font-weight: 800;
+      color: #fff; letter-spacing: -.3px;
+      margin-bottom: 10px;
+      animation: fadeup .4s .2s ease both;
+    }
+    .card-sub {
+      font-size: 14px; color: var(--text2);
+      line-height: 1.65; margin-bottom: 32px;
+      animation: fadeup .4s .25s ease both;
+    }
+
+    /* session summary pills */
+    .session-info {
+      display: flex; gap: 10px;
+      justify-content: center;
+      margin-bottom: 32px;
+      animation: fadeup .4s .3s ease both;
+    }
+    .s-pill {
+      background: var(--s2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 12px;
+    }
+    .s-pill-val { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .s-pill-lbl { color: var(--text3); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+
+    /* buttons */
+    .btn-primary {
+      display: block; width: 100%;
+      background: linear-gradient(135deg, var(--orange), var(--orange-d));
+      color: #fff; font-size: 14px; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      padding: 14px; border-radius: 10px; border: none;
+      cursor: pointer; text-decoration: none;
+      box-shadow: 0 4px 20px rgba(255,122,0,.35);
+      transition: opacity .15s, transform .1s;
+      margin-bottom: 12px;
+      animation: fadeup .4s .35s ease both;
+    }
+    .btn-primary:hover  { opacity: .88; }
+    .btn-primary:active { transform: scale(.98); }
+
+    .btn-ghost {
+      display: block; width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      color: var(--text2); font-size: 13px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      padding: 13px; cursor: pointer; text-decoration: none;
+      transition: all .15s;
+      animation: fadeup .4s .4s ease both;
+    }
+    .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+    .brand {
+      display: flex; align-items: center;
+      justify-content: center; gap: 12px;
+      margin-bottom: 36px;
+      animation: fadeup .4s .05s ease both;
+    }
+    .brand-logo {
+      width: 40px; height: 40px;
+      border-radius: 10px; object-fit: cover;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px; font-weight: 800; color: #fff;
+    }
+    .brand-sub {
+      font-size: 9px; font-weight: 700;
+      color: var(--orange); letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .card-footer {
+      margin-top: 28px;
+      font-size: 12px; color: var(--text3);
+      animation: fadeup .4s .45s ease both;
+    }
+    .card-footer a { color: var(--text2); text-decoration: none; }
+    .card-footer a:hover { color: var(--orange); }
+
+    @keyframes fadeup {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <img
+      src="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186"
+      alt="TradePilot"
+      class="brand-logo"
+    >
+    <div>
+      <div class="brand-name">TradePilot</div>
+      <div class="brand-sub">Paper Trading</div>
+    </div>
+  </div>
+
+  <div class="icon-ring">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0110 0v4"/>
+    </svg>
+  </div>
+
+  <div class="card-eyebrow">Session ended</div>
+  <h1 class="card-title">You've been signed out</h1>
+  <p class="card-sub">
+    Your session has ended safely. Your positions and portfolio data are saved and ready when you return.
+  </p>
+
+  <div class="session-info">
+    <div class="s-pill">
+      <div class="s-pill-val">Saved</div>
+      <div class="s-pill-lbl">Positions</div>
+    </div>
+    <div class="s-pill">
+      <div class="s-pill-val">Secure</div>
+      <div class="s-pill-lbl">Session</div>
+    </div>
+    <div class="s-pill">
+      <div class="s-pill-val">0 Risk</div>
+      <div class="s-pill-lbl">Paper Trade</div>
+    </div>
+  </div>
+
+  <a href="{% url 'login' %}" class="btn-primary">Sign in again</a>
+  <a href="{% url 'login' %}" class="btn-ghost">Go to homepage</a>
+
+  <div class="card-footer">
+    Having trouble? <a href="#">Contact support</a>
+    &nbsp;·&nbsp;
+    <a href="#">Privacy Policy</a>
+  </div>
+</div>
+
+</body>
+</html>

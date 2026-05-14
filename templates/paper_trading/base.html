@@ -5,6 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{% block title %}Findoc Paper Trade{% endblock %}</title>
+    <!-- Favicon: Using the provided TradePilot logo URL -->
+  <link rel="icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
+  <link rel="shortcut icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   {% block head_extra %}{% endblock %}
   <style>
@@ -339,6 +342,46 @@
       .stats-grid { grid-template-columns: 1fr 1fr; }
       .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
     }
+
+    .sidebar-brand {
+  padding: 22px 20px 20px;
+  background: linear-gradient(135deg, rgba(255,122,0,.18) 0%, transparent 70%);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,.10);
+  box-shadow: 0 6px 20px rgba(0,0,0,.45);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-text span {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -.6px;
+}
+
+.brand-text small {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
   </style>
 </head>
 <body>
@@ -346,7 +389,18 @@
 
   <!-- ── SIDEBAR ── -->
   <aside class="sidebar">
-    <div class="sidebar-brand">Findoc <em>Paper Trade</em></div>
+    <!-- <div class="sidebar-brand">Findoc <em>Paper Trade</em></div> -->
+     <div class="sidebar-brand">
+  <img 
+    src="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186" 
+    alt="TradePilot Logo"
+    class="brand-logo"
+  >
+  <div class="brand-text">
+    <span>TradePilot</span>
+    <small>Paper Trading</small>
+  </div>
+</div>
 
     <div class="sidebar-section">Equity</div>
     <nav class="sidebar-nav">
