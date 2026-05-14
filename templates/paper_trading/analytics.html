@@ -1,0 +1,137 @@
+{% extends "paper_trading/base.html" %}
+{% block title %}Analytics — Findoc Paper Trade{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block nav_analytics %}active{% endblock %}
+{% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
+
+{% block head_extra %}
+<style>
+  .insight-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .insight-item {
+    padding: 14px 16px;
+    border-radius: 10px;
+    border-left: 3px solid var(--border2);
+    background: var(--surface2);
+  }
+  .insight-item.success { border-color: var(--green);  background: rgba(16,185,129,.06); }
+  .insight-item.warning { border-color: var(--yellow); background: rgba(245,158,11,.06); }
+  .insight-item.danger  { border-color: var(--red);    background: rgba(239,68,68,.06); }
+  .insight-item.tip     { border-color: var(--blue);   background: rgba(59,130,246,.06); }
+  .insight-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .insight-body  { font-size: 12px; color: var(--text2); line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block topbar_right %}
+<a href="{% url 'paper_trading:place_order' %}" class="tb-btn">+ Place Order</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- TRADING METRICS -->
+<div class="stats-grid">
+  <div class="stat-card c-orange">
+    <div class="sc-label">Total Trades</div>
+    <div class="sc-val">{{ total_trades }}</div>
+    <div class="sc-sub">{{ total_buys }} buys · {{ total_sells }} sells</div>
+  </div>
+  <div class="stat-card {% if win_rate >= 50 %}c-green{% else %}c-red{% endif %}">
+    <div class="sc-label">Win Rate</div>
+    <div class="sc-val {% if win_rate >= 50 %}up{% else %}down{% endif %}">{{ win_rate }}%</div>
+    <div class="sc-sub">of closed trades profitable</div>
+  </div>
+  <div class="stat-card c-green">
+    <div class="sc-label">Avg Profit / Trade</div>
+    <div class="sc-val up">{% if avg_profit > 0 %}+{% endif %}₹{{ avg_profit|floatformat:2 }}</div>
+    <div class="sc-sub">on winning trades</div>
+  </div>
+  <div class="stat-card c-red">
+    <div class="sc-label">Avg Loss / Trade</div>
+    <div class="sc-val down">₹{{ avg_loss|floatformat:2 }}</div>
+    <div class="sc-sub">on losing trades</div>
+  </div>
+  <div class="stat-card {% if portfolio.portfolio_return_pct >= 0 %}c-green{% else %}c-red{% endif %}">
+    <div class="sc-label">Overall Return</div>
+    <div class="sc-val {% if portfolio.portfolio_return_pct >= 0 %}up{% else %}down{% endif %}">{{ portfolio.portfolio_return_pct }}%</div>
+    <div class="sc-sub">vs ₹10,00,000 start</div>
+  </div>
+  <div class="stat-card {% if portfolio.realized_pnl >= 0 %}c-blue{% else %}c-red{% endif %}">
+    <div class="sc-label">Realised P&amp;L</div>
+    <div class="sc-val {% if portfolio.realized_pnl >= 0 %}up{% else %}down{% endif %}">₹{{ portfolio.realized_pnl|floatformat:2 }}</div>
+    <div class="sc-sub">booked profit / loss</div>
+  </div>
+</div>
+
+<!-- BEST / WORST -->
+{% if best_trade or worst_trade %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+  {% if best_trade %}
+  <div class="table-card" style="padding:20px;margin-bottom:0;border-top:3px solid var(--green);">
+    <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Best Trade</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:4px;"><span class="badge badge-orange">{{ best_trade.symbol }}</span></div>
+    <div class="pnl-pos" style="font-size:22px;font-weight:700;margin-top:8px;">+₹{{ best_trade.pnl|floatformat:2 }}</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px;">{{ best_trade.qty }} shares @ ₹{{ best_trade.sell_price|floatformat:2 }}</div>
+  </div>
+  {% endif %}
+  {% if worst_trade %}
+  <div class="table-card" style="padding:20px;margin-bottom:0;border-top:3px solid var(--red);">
+    <div style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Worst Trade</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:4px;"><span class="badge badge-orange">{{ worst_trade.symbol }}</span></div>
+    <div class="pnl-neg" style="font-size:22px;font-weight:700;margin-top:8px;">₹{{ worst_trade.pnl|floatformat:2 }}</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px;">{{ worst_trade.qty }} shares @ ₹{{ worst_trade.sell_price|floatformat:2 }}</div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- TWO COLUMN: Insights + Trade table -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+  <!-- Learning Insights -->
+  <div>
+    <div class="section-hdr"><div class="section-title">Learning Insights</div></div>
+    <ul class="insight-list">
+      {% for insight in insights %}
+      <li class="insight-item {{ insight.type }}">
+        <div class="insight-title">{{ insight.icon }} {{ insight.title }}</div>
+        <div class="insight-body">{{ insight.body }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Closed trades -->
+  <div>
+    <div class="section-hdr"><div class="section-title">Recent Closed Trades</div></div>
+    {% if trade_pnls %}
+    <div class="table-card" style="margin-bottom:0;">
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Symbol</th><th>Qty</th><th>Sell Price</th><th>P&amp;L</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for t in trade_pnls reversed %}
+          <tr>
+            <td><span class="badge badge-orange">{{ t.symbol }}</span></td>
+            <td>{{ t.qty }}</td>
+            <td>₹{{ t.sell_price|floatformat:2 }}</td>
+            <td class="{% if t.pnl >= 0 %}pnl-pos{% else %}pnl-neg{% endif %}">
+              {% if t.pnl >= 0 %}+{% endif %}₹{{ t.pnl|floatformat:2 }}
+            </td>
+            <td style="color:var(--text3);font-size:12px;">{{ t.date|date:"d M Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="table-card" style="margin-bottom:0;">
+      <div class="empty-state">No closed trades yet.<br>Execute SELL orders to see analytics.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

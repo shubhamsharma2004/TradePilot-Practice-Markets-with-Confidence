@@ -1,0 +1,393 @@
+{% extends "paper_trading/base.html" %}
+{% load static %}
+{% block title %}Place Order — Findoc Paper Trade{% endblock %}
+{% block page_title %}Place Order{% endblock %}
+{% block nav_order %}active{% endblock %}
+{% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
+
+{% block head_extra %}
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  /* Override page-body to be non-scrolling split layout */
+  .page-body { padding: 0 !important; overflow: hidden !important; display: flex; }
+
+  /* SPLIT LAYOUT */
+  .workspace { display: flex; flex: 1; overflow: hidden; }
+
+  /* CHART PANEL */
+  .chart-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    background: var(--s1);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .chart-symbol { font-size: 18px; font-weight: 700; color: var(--text); }
+  .chart-price  { font-size: 16px; font-weight: 600; color: var(--orange); }
+  .chart-name   { font-size: 12px; color: var(--text2); }
+  .period-tabs  { display: flex; gap: 4px; margin-left: auto; }
+  .period-tab {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    border: none; cursor: pointer;
+    background: var(--s2); color: var(--text3);
+    transition: all .15s;
+  }
+  .period-tab.active { background: var(--orange); color: #fff; }
+  .chart-placeholder {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text3); gap: 12px; font-size: 14px;
+  }
+  #lw-chart { flex: 1; }
+
+  /* ORDER PANEL */
+  .order-panel {
+    width: 360px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    background: var(--s1);
+  }
+  .order-panel-inner { padding: 20px; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; }
+  .autocomplete-list {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: var(--s2);
+    border: 1px solid var(--border2);
+    border-radius: 0 0 8px 8px;
+    max-height: 220px; overflow-y: auto;
+  }
+  .autocomplete-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; cursor: pointer; transition: background .12s;
+  }
+  .autocomplete-item:hover { background: var(--s3); }
+  .autocomplete-item .sym  { font-size: 13px; font-weight: 700; color: var(--text); }
+  .autocomplete-item .name { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .autocomplete-item .exch { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: rgba(249,115,22,.15); color: var(--orange); }
+  .autocomplete-loading { padding: 10px 14px; color: var(--text3); font-size: 12px; }
+
+  /* PRICE STRIP */
+  .price-strip {
+    display: none;
+    background: var(--s2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 12px 0;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .price-strip.show { display: flex; }
+  .price-strip .co  { font-size: 12px; color: var(--text2); }
+  .price-strip .ltp { font-size: 18px; font-weight: 700; color: var(--orange); }
+
+  /* BUY / SELL TABS */
+  .order-tabs { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border2); margin: 14px 0; }
+  .order-tab {
+    flex: 1; padding: 10px; text-align: center;
+    font-size: 13px; font-weight: 700; cursor: pointer; border: none;
+    background: var(--s2); color: var(--text3); transition: all .15s;
+  }
+  .order-tab.buy.active  { background: var(--green); color: #fff; }
+  .order-tab.sell.active { background: var(--red);   color: #fff; }
+
+  /* FORM ELEMENTS (local) */
+  .order-label { font-size: 11px; font-weight: 600; color: var(--text3); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .3px; }
+  .order-input, .order-select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    background: var(--s2); border: 1px solid var(--border2);
+    color: var(--text); font-size: 13px;
+    font-family: 'Inter', sans-serif; transition: border .15s;
+  }
+  .order-input:focus, .order-select:focus { outline: none; border-color: var(--orange); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { margin-bottom: 12px; }
+
+  /* ORDER SUMMARY */
+  .order-summary {
+    background: var(--s2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+  }
+  .order-summary-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; color: var(--text2); }
+  .order-summary-row.total { font-weight: 700; font-size: 13px; color: var(--text); border-top: 1px solid var(--border2); margin-top: 6px; padding-top: 8px; }
+
+  /* SUBMIT */
+  .btn-submit {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: var(--green); color: #fff; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s; margin-top: 4px;
+  }
+  .btn-submit:hover { opacity: .88; }
+  .btn-submit.sell-btn { background: var(--red); }
+  .cash-info { text-align: center; font-size: 11px; color: var(--text3); margin-top: 8px; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace">
+
+  <!-- CHART -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div class="chart-symbol" id="chart-symbol">—</div>
+      <div class="chart-price"  id="chart-price">Select a stock</div>
+      <div class="chart-name"   id="chart-name" style="flex:1;"></div>
+      <div class="period-tabs" id="period-tabs" style="display:none;">
+        <button class="period-tab" onclick="loadChart(currentSymbol,'1d')">1D</button>
+        <button class="period-tab" onclick="loadChart(currentSymbol,'5d')">5D</button>
+        <button class="period-tab" onclick="loadChart(currentSymbol,'1mo')">1M</button>
+        <button class="period-tab" onclick="loadChart(currentSymbol,'3mo')">3M</button>
+        <button class="period-tab active" onclick="loadChart(currentSymbol,'6mo')">6M</button>
+        <button class="period-tab" onclick="loadChart(currentSymbol,'1y')">1Y</button>
+        <button class="period-tab" onclick="loadChart(currentSymbol,'2y')">2Y</button>
+      </div>
+    </div>
+    <div class="chart-placeholder" id="chart-placeholder">
+      <svg width="56" height="56" fill="none" stroke="var(--text3)" stroke-width="1.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <p>Search for a stock to view its chart</p>
+    </div>
+    <div id="lw-chart" style="display:none;flex:1;"></div>
+  </div>
+
+  <!-- ORDER FORM -->
+  <div class="order-panel">
+    <div class="order-panel-inner">
+
+      <form method="post" id="order-form">
+        {% csrf_token %}
+        <input type="hidden" name="order_type" id="order-type-input" value="BUY">
+
+        <div class="form-group">
+          <div class="section-label">Stock Symbol (NSE)</div>
+          <div class="search-wrap">
+            <input type="text" class="order-input" id="symbol-input" name="symbol"
+                   placeholder="RELIANCE, TCS, INFY…"
+                   autocomplete="off" value="{{ symbol }}" style="text-transform:uppercase;">
+            <div class="autocomplete-list" id="autocomplete-list"></div>
+          </div>
+        </div>
+
+        <div class="price-strip" id="price-strip">
+          <div>
+            <div class="co" id="preview-company">—</div>
+            <div style="font-size:11px;color:var(--text3);">Live Price (NSE)</div>
+          </div>
+          <div class="ltp" id="preview-price">₹—</div>
+        </div>
+
+        <div class="order-tabs">
+          <button type="button" class="order-tab buy active" id="tab-buy" onclick="setOrderType('BUY')">BUY</button>
+          <button type="button" class="order-tab sell" id="tab-sell" onclick="setOrderType('SELL')">SELL</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="margin:0;">
+            <label class="order-label">Quantity</label>
+            <input type="number" class="order-input" name="quantity" id="qty-input" min="1" value="1" required>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="order-label">Order Type</label>
+            <select class="order-select" name="price_type" id="price-type-select" onchange="togglePriceFields()">
+              <option value="MARKET">Market</option>
+              <option value="LIMIT">Limit</option>
+              <option value="SL">Stop Loss</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="limit-price-group" style="display:none;">
+          <label class="order-label">Limit Price (₹)</label>
+          <input type="number" class="order-input" name="limit_price" id="limit-price-input" min="0.01" step="0.05">
+        </div>
+
+        <div class="form-group" id="stop-price-group" style="display:none;">
+          <label class="order-label">Stop Loss Trigger (₹)</label>
+          <input type="number" class="order-input" name="stop_price" id="stop-price-input" min="0.01" step="0.05">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Sell triggers when price drops to this level</div>
+        </div>
+
+        <div class="order-summary" id="order-summary" style="display:none;">
+          <div class="order-summary-row"><span>Symbol</span><span id="sum-symbol">—</span></div>
+          <div class="order-summary-row"><span>Quantity</span><span id="sum-qty">—</span></div>
+          <div class="order-summary-row"><span>Price</span><span id="sum-price">—</span></div>
+          <div class="order-summary-row total"><span>Estimated Total</span><span id="sum-total">—</span></div>
+        </div>
+
+        <button type="submit" class="btn-submit" id="submit-btn">Place BUY Order</button>
+        <div class="cash-info">Available: ₹{{ portfolio.cash_balance|floatformat:2 }}</div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="page-init">
+  {"symbol":"{{ symbol }}","price":{{ stock_data.price|default:"null" }},"name":"{{ stock_data.name|default:'' }}"}
+</script>
+<script>
+const PRICE_API  = "{% url 'paper_trading:stock_price' %}";
+const SEARCH_API = "{% url 'paper_trading:stock_search' %}";
+const OHLC_API   = "{% url 'paper_trading:stock_ohlc' %}";
+
+let currentPrice = null, currentSymbol = null, lwChart = null, candleSeries = null;
+let searchTimeout = null, chartPollTimer = null;
+
+const symbolInput = document.getElementById('symbol-input');
+const autocompleteList = document.getElementById('autocomplete-list');
+const priceStrip = document.getElementById('price-strip');
+const qtyInput   = document.getElementById('qty-input');
+const submitBtn  = document.getElementById('submit-btn');
+const lwChartEl  = document.getElementById('lw-chart');
+
+function initChart() {
+  lwChartEl.innerHTML = '';
+  lwChart = LightweightCharts.createChart(lwChartEl, {
+    layout:  { background: { color: '#07090f' }, textColor: '#7e95b5' },
+    grid:    { vertLines: { color: '#1a2540' }, horzLines: { color: '#1a2540' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#1a2540' },
+    timeScale: { borderColor: '#1a2540', timeVisible: true },
+    width: lwChartEl.clientWidth, height: lwChartEl.clientHeight || 400,
+  });
+  candleSeries = lwChart.addCandlestickSeries({
+    upColor:'#00c896', downColor:'#ff3b5c',
+    borderUpColor:'#00c896', borderDownColor:'#ff3b5c',
+    wickUpColor:'#00c896', wickDownColor:'#ff3b5c',
+  });
+  new ResizeObserver(() => lwChart && lwChart.resize(lwChartEl.clientWidth, lwChartEl.clientHeight)).observe(lwChartEl);
+}
+
+function loadChart(symbol, period) {
+  period = period || '6mo'; currentSymbol = symbol;
+  clearInterval(chartPollTimer);
+  if (period === '1d' || period === '5d') chartPollTimer = setInterval(() => loadChart(currentSymbol, period), 60000);
+  document.querySelectorAll('.period-tab').forEach(t => {
+    const map = {'1D':'1d','5D':'5d','1M':'1mo','3M':'3mo','6M':'6mo','1Y':'1y','2Y':'2y'};
+    t.classList.toggle('active', map[t.textContent.trim()] === period);
+  });
+  document.getElementById('chart-placeholder').style.display = 'none';
+  lwChartEl.style.display = 'block';
+  document.getElementById('period-tabs').style.display = 'flex';
+  if (!lwChart) initChart();
+  fetch(`${OHLC_API}?symbol=${encodeURIComponent(symbol)}&period=${period}`)
+    .then(r => r.json()).then(data => {
+      if (data.candles?.length) {
+        lwChart.applyOptions({ timeScale: { timeVisible: !!data.intraday } });
+        candleSeries.setData(data.candles);
+        lwChart.timeScale().fitContent();
+      }
+    }).catch(() => {});
+}
+
+function fetchPrice(symbol) {
+  if (!symbol) return;
+  fetch(`${PRICE_API}?symbol=${encodeURIComponent(symbol)}`)
+    .then(r => r.json()).then(data => {
+      if (data.price) {
+        currentPrice = data.price;
+        document.getElementById('preview-company').textContent = data.name;
+        document.getElementById('preview-price').textContent   = '₹' + data.price.toLocaleString('en-IN', {minimumFractionDigits:2});
+        priceStrip.classList.add('show');
+        document.getElementById('chart-symbol').textContent = symbol;
+        document.getElementById('chart-price').textContent  = '₹' + data.price.toLocaleString('en-IN', {minimumFractionDigits:2});
+        document.getElementById('chart-name').textContent   = data.name;
+        loadChart(symbol, '6mo');
+        updateSummary();
+      }
+    }).catch(() => {});
+}
+
+(function() {
+  const init = JSON.parse(document.getElementById('page-init').textContent);
+  if (init.symbol && init.price) {
+    currentPrice = init.price;
+    document.getElementById('preview-company').textContent = init.name;
+    document.getElementById('preview-price').textContent   = '₹' + init.price.toLocaleString('en-IN', {minimumFractionDigits:2});
+    priceStrip.classList.add('show');
+    document.getElementById('chart-symbol').textContent = init.symbol;
+    document.getElementById('chart-price').textContent  = '₹' + init.price.toLocaleString('en-IN', {minimumFractionDigits:2});
+    document.getElementById('chart-name').textContent   = init.name;
+    loadChart(init.symbol, '6mo');
+    updateSummary();
+  }
+})();
+
+function setOrderType(type) {
+  document.getElementById('order-type-input').value = type;
+  document.getElementById('tab-buy').classList.toggle('active',  type==='BUY');
+  document.getElementById('tab-sell').classList.toggle('active', type==='SELL');
+  submitBtn.textContent = `Place ${type} Order`;
+  submitBtn.className = 'btn-submit' + (type==='SELL' ? ' sell-btn' : '');
+  updateSummary();
+}
+
+function togglePriceFields() {
+  const pt = document.getElementById('price-type-select').value;
+  document.getElementById('limit-price-group').style.display = pt==='LIMIT' ? 'block' : 'none';
+  document.getElementById('stop-price-group').style.display  = pt==='SL'    ? 'block' : 'none';
+  updateSummary();
+}
+
+function updateSummary() {
+  const sym   = symbolInput.value.toUpperCase();
+  const qty   = parseInt(qtyInput.value) || 0;
+  const pt    = document.getElementById('price-type-select').value;
+  const lim   = parseFloat(document.getElementById('limit-price-input').value) || null;
+  const sl    = parseFloat(document.getElementById('stop-price-input').value)  || null;
+  const price = pt==='LIMIT' ? lim : pt==='SL' ? sl : currentPrice;
+  if (!sym || qty<=0 || !price) { document.getElementById('order-summary').style.display='none'; return; }
+  document.getElementById('sum-symbol').textContent = sym;
+  document.getElementById('sum-qty').textContent    = qty;
+  document.getElementById('sum-price').textContent  = '₹' + price.toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('sum-total').textContent  = '₹' + (price*qty).toLocaleString('en-IN',{minimumFractionDigits:2});
+  document.getElementById('order-summary').style.display = 'block';
+}
+
+symbolInput.addEventListener('input', function() {
+  const q = this.value.trim();
+  clearTimeout(searchTimeout);
+  autocompleteList.innerHTML = '';
+  if (!q) return;
+  autocompleteList.innerHTML = '<div class="autocomplete-loading">Searching…</div>';
+  searchTimeout = setTimeout(() => {
+    fetch(`${SEARCH_API}?q=${encodeURIComponent(q)}`)
+      .then(r => r.json()).then(data => {
+        autocompleteList.innerHTML = '';
+        if (!data.results.length) { autocompleteList.innerHTML = '<div class="autocomplete-loading">No results</div>'; return; }
+        data.results.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'autocomplete-item';
+          div.innerHTML = `<div><div class="sym">${item.symbol}</div><div class="name">${item.name}</div></div><span class="exch">${item.exchange}</span>`;
+          div.onmousedown = e => { e.preventDefault(); symbolInput.value = item.symbol; autocompleteList.innerHTML = ''; fetchPrice(item.symbol); };
+          autocompleteList.appendChild(div);
+        });
+      }).catch(() => { autocompleteList.innerHTML = ''; });
+  }, 280);
+});
+symbolInput.addEventListener('blur', () => setTimeout(() => autocompleteList.innerHTML = '', 150));
+symbolInput.addEventListener('keydown', e => {
+  if (e.key==='Enter')  { e.preventDefault(); autocompleteList.innerHTML=''; fetchPrice(symbolInput.value.trim()); }
+  if (e.key==='Escape') { autocompleteList.innerHTML=''; }
+});
+qtyInput.addEventListener('input', updateSummary);
+document.getElementById('limit-price-input').addEventListener('input', updateSummary);
+document.getElementById('stop-price-input').addEventListener('input', updateSummary);
+</script>
+{% endblock %}

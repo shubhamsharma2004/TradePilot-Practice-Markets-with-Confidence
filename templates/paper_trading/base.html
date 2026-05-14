@@ -1,0 +1,423 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Findoc Paper Trade{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  {% block head_extra %}{% endblock %}
+  <style>
+    :root {
+      --bg:       #07090f;
+      --s1:       #0d1321;
+      --s2:       #111a2e;
+      --s3:       #1a2540;
+      --border:   rgba(255,255,255,.07);
+      --border2:  rgba(255,255,255,.12);
+      --text:     #edf2f7;
+      --text2:    #7e95b5;
+      --text3:    #3d5470;
+      --orange:   #ff7a00;
+      --orange-d: #e06800;
+      --green:    #00c896;
+      --green-d:  #00a87e;
+      --red:      #ff3b5c;
+      --red-d:    #e02040;
+      --blue:     #4f8fff;
+      --purple:   #9b72ff;
+      --yellow:   #fbbf24;
+      --sidebar-w: 224px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    /* ── APP SHELL ─────────────────────────────────────────── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── SIDEBAR ───────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: linear-gradient(180deg, #0d1525 0%, #080c18 100%);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .sidebar-brand {
+      padding: 22px 20px 18px;
+      background: linear-gradient(135deg, rgba(255,122,0,.18) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+    .sidebar-brand em { color: var(--orange); font-style: normal; }
+
+    .sidebar-section {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 20px 20px 6px;
+    }
+    .sidebar-nav { padding: 2px 10px; }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all .15s;
+      margin-bottom: 1px;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-nav a:hover {
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border-left-color: rgba(255,255,255,.15);
+    }
+    .sidebar-nav a.active {
+      background: linear-gradient(90deg, rgba(255,122,0,.18), transparent);
+      color: var(--orange);
+      border-left-color: var(--orange);
+      font-weight: 600;
+    }
+    .sidebar-nav a svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .65; }
+    .sidebar-nav a.active svg, .sidebar-nav a:hover svg { opacity: 1; }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .cash-widget {
+      background: linear-gradient(135deg, rgba(0,200,150,.12), rgba(13,19,33,.9));
+      border: 1px solid rgba(0,200,150,.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .cash-widget .cw-label { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 4px; }
+    .cash-widget .cw-val   { font-size: 18px; font-weight: 800; color: var(--green); }
+
+    /* ── MAIN ──────────────────────────────────────────────── */
+    .main-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      background: rgba(13,19,33,.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      height: 54px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.2px; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .tb-btn {
+      background: linear-gradient(135deg, var(--orange), var(--orange-d));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity .15s;
+      box-shadow: 0 0 16px rgba(255,122,0,.3);
+    }
+    .tb-btn:hover { opacity: .88; }
+    .tb-btn-ghost {
+      background: var(--s3);
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      transition: all .15s;
+    }
+    .tb-btn-ghost:hover { color: var(--text); border-color: var(--text2); }
+
+    .page-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    /* ── STAT CARDS ────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      border-radius: 16px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid;
+      transition: transform .15s;
+    }
+    .stat-card:hover { transform: translateY(-1px); }
+
+    .stat-card.c-orange { background: linear-gradient(135deg, rgba(255,122,0,.2) 0%, var(--s1) 65%);  border-color: rgba(255,122,0,.35); }
+    .stat-card.c-green  { background: linear-gradient(135deg, rgba(0,200,150,.2) 0%, var(--s1) 65%);  border-color: rgba(0,200,150,.35); }
+    .stat-card.c-red    { background: linear-gradient(135deg, rgba(255,59,92,.2)  0%, var(--s1) 65%);  border-color: rgba(255,59,92,.35); }
+    .stat-card.c-blue   { background: linear-gradient(135deg, rgba(79,143,255,.2) 0%, var(--s1) 65%);  border-color: rgba(79,143,255,.35); }
+    .stat-card.c-purple { background: linear-gradient(135deg, rgba(155,114,255,.2)0%, var(--s1) 65%);  border-color: rgba(155,114,255,.35); }
+    .stat-card.c-yellow { background: linear-gradient(135deg, rgba(251,191,36,.2) 0%, var(--s1) 65%);  border-color: rgba(251,191,36,.35); }
+
+    .sc-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+    .sc-val   { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+    .sc-val.up   { color: var(--green); }
+    .sc-val.down { color: var(--red); }
+    .sc-sub  { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+    /* ── SECTION HEADER ────────────────────────────────────── */
+    .section-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .section-link  { font-size: 12px; color: var(--orange); text-decoration: none; font-weight: 600; }
+    .section-link:hover { text-decoration: underline; }
+
+    /* ── TABLE CARD ────────────────────────────────────────── */
+    .table-card {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: rgba(255,255,255,.03);
+      padding: 11px 16px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      vertical-align: middle;
+      color: var(--text);
+      font-size: 13px;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+
+    /* ── BADGES & PILLS ────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 9px; border-radius: 6px;
+    }
+    .badge-orange { background: rgba(255,122,0,.18);  color: var(--orange); }
+    .badge-green  { background: rgba(0,200,150,.18);  color: var(--green); }
+    .badge-red    { background: rgba(255,59,92,.18);  color: var(--red); }
+    .badge-blue   { background: rgba(79,143,255,.18); color: var(--blue); }
+    .badge-purple { background: rgba(155,114,255,.18);color: var(--purple); }
+    .badge-muted  { background: var(--s3); color: var(--text2); }
+    .badge-yellow { background: rgba(251,191,36,.18); color: var(--yellow); }
+
+    .pill {
+      display: inline-block;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .pill-BUY       { background: rgba(0,200,150,.18);   color: var(--green); }
+    .pill-SELL      { background: rgba(255,59,92,.18);   color: var(--red); }
+    .pill-LONG      { background: rgba(0,200,150,.18);   color: var(--green); }
+    .pill-SHORT     { background: rgba(255,59,92,.18);   color: var(--red); }
+    .pill-EXECUTED  { background: rgba(0,200,150,.18);   color: var(--green); }
+    .pill-PENDING   { background: rgba(251,191,36,.18);  color: var(--yellow); }
+    .pill-REJECTED  { background: rgba(255,59,92,.18);   color: var(--red); }
+    .pill-CANCELLED { background: var(--s3); color: var(--text3); }
+    .pill-CE        { background: rgba(79,143,255,.18);  color: var(--blue); }
+    .pill-PE        { background: rgba(255,59,92,.18);   color: var(--red); }
+    .pill-FUT       { background: rgba(155,114,255,.18); color: var(--purple); }
+
+    .pnl-pos { color: var(--green); font-weight: 700; }
+    .pnl-neg { color: var(--red);   font-weight: 700; }
+
+    /* ── FORMS ─────────────────────────────────────────────── */
+    .form-card {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 26px;
+      margin-bottom: 18px;
+    }
+    .form-card-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--text3); text-transform: uppercase;
+      letter-spacing: .7px; margin-bottom: 20px;
+    }
+    .form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .form-label  { font-size: 11px; font-weight: 600; color: var(--text3); display: block; margin-bottom: 7px; text-transform: uppercase; letter-spacing: .4px; }
+    .form-input, .form-select {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--border2);
+      border-radius: 9px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      transition: border .15s, box-shadow .15s;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(255,122,0,.12);
+    }
+    .form-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+    /* ── MESSAGES ──────────────────────────────────────────── */
+    .messages { margin-bottom: 20px; }
+    .msg { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 8px; border-left: 3px solid; }
+    .msg-error   { background: rgba(255,59,92,.1);  border-color: var(--red);   color: #ffaab8; }
+    .msg-success { background: rgba(0,200,150,.1);  border-color: var(--green); color: #5eead4; }
+
+    /* ── EMPTY STATE ───────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 56px 24px; color: var(--text3); font-size: 13px; }
+    .empty-state a { color: var(--orange); text-decoration: none; font-weight: 600; }
+
+    /* ── ACTION BUTTON ─────────────────────────────────────── */
+    .btn-action {
+      font-size: 11px; font-weight: 600;
+      padding: 5px 13px; border-radius: 7px;
+      border: 1px solid var(--border2);
+      color: var(--text2); background: var(--s2);
+      cursor: pointer; text-decoration: none;
+      transition: all .15s;
+    }
+    .btn-action:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-action.danger { border-color: rgba(255,59,92,.4); color: var(--red); }
+    .btn-action.danger:hover { background: rgba(255,59,92,.12); }
+
+    /* ── RESPONSIVE ────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .page-body { padding: 16px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">Findoc <em>Paper Trade</em></div>
+
+    <div class="sidebar-section">Equity</div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'paper_trading:dashboard' %}"     class="{% block nav_dashboard %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="{% url 'paper_trading:place_order' %}"   class="{% block nav_order %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Place Order
+      </a>
+      <a href="{% url 'paper_trading:order_history' %}" class="{% block nav_orders %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        Orders
+      </a>
+      <a href="{% url 'paper_trading:analytics' %}"     class="{% block nav_analytics %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </a>
+    </nav>
+
+    <div class="sidebar-section">F&amp;O</div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'paper_trading:fno_dashboard' %}"     class="{% block nav_fno %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+        F&amp;O Positions
+      </a>
+      <a href="{% url 'paper_trading:fno_order' %}"         class="{% block nav_fno_order %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        F&amp;O Trade
+      </a>
+      <a href="{% url 'paper_trading:fno_order_history' %}" class="{% block nav_fno_hist %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        F&amp;O History
+      </a>
+    </nav>
+
+    <div class="sidebar-section">Tools</div>
+    <nav class="sidebar-nav">
+      <a href="{% url 'paper_trading:simulator' %}"     class="{% block nav_sim %}{% endblock %}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12h3M19 12h3M12 2v3M12 19v3"/></svg>
+        Simulator
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="cash-widget">
+        <div class="cw-label">Available Cash</div>
+        <div class="cw-val">{% block sidebar_cash %}—{% endblock %}</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main-wrap">
+    <div class="topbar">
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <div class="topbar-right">{% block topbar_right %}{% endblock %}</div>
+    </div>
+    <div class="page-body">
+      {% if messages %}
+      <div class="messages">
+        {% for msg in messages %}
+        <div class="msg {% if msg.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

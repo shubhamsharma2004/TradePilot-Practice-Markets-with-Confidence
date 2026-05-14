@@ -1,0 +1,67 @@
+{% extends "paper_trading/base.html" %}
+{% block title %}Orders — Findoc Paper Trade{% endblock %}
+{% block page_title %}Order History{% endblock %}
+{% block nav_orders %}active{% endblock %}
+{% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
+
+{% block topbar_right %}
+<a href="{% url 'paper_trading:place_order' %}" class="tb-btn">+ Place Order</a>
+{% endblock %}
+
+{% block content %}
+<div class="table-card">
+  {% if orders %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Date &amp; Time</th>
+        <th>Symbol</th>
+        <th>Company</th>
+        <th>Side</th>
+        <th>Type</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ord in orders %}
+      <tr>
+        <td style="color:var(--text3);white-space:nowrap;font-size:12px;">{{ ord.created_at|date:"d M Y, H:i" }}</td>
+        <td><span class="badge badge-orange">{{ ord.symbol }}</span></td>
+        <td style="color:var(--text2);font-size:12px;">{{ ord.company_name }}</td>
+        <td><span class="pill pill-{{ ord.order_type }}">{{ ord.order_type }}</span></td>
+        <td style="color:var(--text3);">{{ ord.get_price_type_display }}</td>
+        <td>{{ ord.quantity }}</td>
+        <td>
+          {% if ord.executed_price %}₹{{ ord.executed_price|floatformat:2 }}
+          {% elif ord.limit_price %}₹{{ ord.limit_price|floatformat:2 }} <span style="color:var(--text3);font-size:10px;">LIM</span>
+          {% elif ord.stop_price %}₹{{ ord.stop_price|floatformat:2 }} <span style="color:var(--text3);font-size:10px;">SL</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>₹{{ ord.total_value|floatformat:0 }}</td>
+        <td>
+          <span class="pill pill-{{ ord.status }}">{{ ord.status }}</span>
+          {% if ord.rejection_reason %}<div style="font-size:10px;color:var(--red);margin-top:2px;">{{ ord.rejection_reason }}</div>{% endif %}
+        </td>
+        <td>
+          {% if ord.status == 'PENDING' %}
+          <form method="post" action="{% url 'paper_trading:cancel_order' ord.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-action danger" onclick="return confirm('Cancel this order?')">Cancel</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No orders yet. <a href="{% url 'paper_trading:place_order' %}">Place your first order →</a></div>
+  {% endif %}
+</div>
+{% endblock %}

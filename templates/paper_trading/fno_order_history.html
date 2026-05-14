@@ -1,0 +1,52 @@
+{% extends "paper_trading/base.html" %}
+{% block title %}F&O History — Findoc Paper Trade{% endblock %}
+{% block page_title %}F&O Order History{% endblock %}
+{% block nav_fno_hist %}active{% endblock %}
+{% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
+
+{% block topbar_right %}
+<a href="{% url 'paper_trading:fno_order' %}" class="tb-btn">+ F&amp;O Order</a>
+{% endblock %}
+
+{% block content %}
+<div class="table-card">
+  {% if orders %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Date &amp; Time</th>
+        <th>Instrument</th>
+        <th>Side</th>
+        <th>Lots</th>
+        <th>Exec Price</th>
+        <th>Premium / Margin</th>
+        <th>Realised P&amp;L</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ord in orders %}
+      <tr>
+        <td style="color:var(--text3);font-size:12px;white-space:nowrap;">{{ ord.created_at|date:"d M Y, H:i" }}</td>
+        <td><span class="pill pill-{{ ord.instrument.instrument_type }}">{{ ord.instrument.display_name }}</span></td>
+        <td><span class="pill pill-{{ ord.order_type }}">{{ ord.order_type }}</span></td>
+        <td>{{ ord.lots }}</td>
+        <td>₹{{ ord.executed_price|floatformat:2 }}</td>
+        <td>₹{{ ord.premium|floatformat:0 }}</td>
+        <td class="{% if ord.realized_pnl > 0 %}pnl-pos{% elif ord.realized_pnl < 0 %}pnl-neg{% endif %}">
+          {% if ord.realized_pnl %}₹{{ ord.realized_pnl|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+        <td><span class="pill pill-{{ ord.status }}">{{ ord.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    No F&amp;O orders yet. <a href="{% url 'paper_trading:fno_order' %}">Place your first F&amp;O trade →</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

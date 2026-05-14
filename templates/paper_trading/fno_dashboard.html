@@ -1,0 +1,141 @@
+{% extends "paper_trading/base.html" %}
+{% block title %}F&O Positions — Findoc Paper Trade{% endblock %}
+{% block page_title %}F&O Positions{% endblock %}
+{% block nav_fno %}active{% endblock %}
+{% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
+
+{% block topbar_right %}
+<a href="{% url 'paper_trading:fno_order' %}" class="tb-btn">+ F&amp;O Order</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="stats-grid">
+  <div class="stat-card c-green">
+    <div class="sc-label">Available Cash</div>
+    <div class="sc-val">₹{{ portfolio.cash_balance|floatformat:0 }}</div>
+    <div class="sc-sub">Free capital</div>
+  </div>
+  <div class="stat-card c-yellow">
+    <div class="sc-label">Margin Blocked</div>
+    <div class="sc-val">₹{{ total_margin|floatformat:0 }}</div>
+    <div class="sc-sub">SPAN + premium</div>
+  </div>
+  <div class="stat-card c-orange">
+    <div class="sc-label">Open Positions</div>
+    <div class="sc-val">{{ positions|length }}</div>
+    <div class="sc-sub">active F&amp;O trades</div>
+  </div>
+  <div class="stat-card {% if total_unrealized >= 0 %}c-green{% else %}c-red{% endif %}">
+    <div class="sc-label">Unrealised P&amp;L</div>
+    <div class="sc-val {% if total_unrealized >= 0 %}up{% else %}down{% endif %}">₹{{ total_unrealized|floatformat:2 }}</div>
+    <div class="sc-sub">open positions</div>
+  </div>
+  <div class="stat-card {% if portfolio.realized_pnl >= 0 %}c-blue{% else %}c-red{% endif %}">
+    <div class="sc-label">Realised P&amp;L</div>
+    <div class="sc-val {% if portfolio.realized_pnl >= 0 %}up{% else %}down{% endif %}">₹{{ portfolio.realized_pnl|floatformat:2 }}</div>
+    <div class="sc-sub">closed trades</div>
+  </div>
+</div>
+
+<!-- OPEN POSITIONS -->
+<div class="section-hdr">
+  <div class="section-title">Open Positions</div>
+  <a href="{% url 'paper_trading:fno_order' %}" class="section-link">+ New Position</a>
+</div>
+<div class="table-card">
+  {% if positions %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Instrument</th>
+        <th>Type</th>
+        <th>Direction</th>
+        <th>Lots</th>
+        <th>Lot Size</th>
+        <th>Entry Price</th>
+        <th>LTP</th>
+        <th>P&amp;L</th>
+        <th>Margin Blocked</th>
+        <th>Expiry</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pos in positions %}
+      <tr>
+        <td><span class="pill pill-{{ pos.instrument.instrument_type }}">{{ pos.instrument.display_name }}</span></td>
+        <td style="color:var(--text2);">{{ pos.instrument.get_instrument_type_display }}</td>
+        <td>
+          <span class="pill {% if pos.lots > 0 %}pill-LONG{% else %}pill-SHORT{% endif %}">
+            {% if pos.lots > 0 %}LONG{% else %}SHORT{% endif %}
+          </span>
+        </td>
+        <td>{{ pos.lots|default:0 }}</td>
+        <td style="color:var(--text3);">{{ pos.instrument.lot_size }}</td>
+        <td>₹{{ pos.avg_entry_price|floatformat:2 }}</td>
+        <td>₹{{ pos.last_price|floatformat:2 }}</td>
+        <td class="{% if pos.unrealized_pnl >= 0 %}pnl-pos{% else %}pnl-neg{% endif %}">₹{{ pos.unrealized_pnl|floatformat:2 }}</td>
+        <td style="color:var(--text3);">₹{{ pos.margin_blocked|floatformat:0 }}</td>
+        <td style="color:var(--text3);font-size:12px;">{{ pos.instrument.expiry|date:"d M y" }}</td>
+        <td>
+          <a href="{% url 'paper_trading:fno_close' pos.id %}" class="btn-action danger"
+             onclick="return confirm('Close this position at market price?')">Close</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No open F&amp;O positions.<br><a href="{% url 'paper_trading:fno_order' %}">Place your first F&amp;O order →</a></div>
+  {% endif %}
+</div>
+
+<!-- RECENT ORDERS -->
+<div class="section-hdr">
+  <div class="section-title">Recent Orders</div>
+  <a href="{% url 'paper_trading:fno_order_history' %}" class="section-link">View all →</a>
+</div>
+<div class="table-card">
+  {% if recent_orders %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Instrument</th>
+        <th>Side</th>
+        <th>Lots</th>
+        <th>Price</th>
+        <th>Premium / Margin</th>
+        <th>Realised P&amp;L</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ord in recent_orders %}
+      <tr>
+        <td style="color:var(--text3);font-size:12px;white-space:nowrap;">{{ ord.created_at|date:"d M y, H:i" }}</td>
+        <td><span class="pill pill-{{ ord.instrument.instrument_type }}">{{ ord.instrument.display_name }}</span></td>
+        <td><span class="pill pill-{{ ord.order_type }}">{{ ord.order_type }}</span></td>
+        <td>{{ ord.lots }}</td>
+        <td>₹{{ ord.executed_price|floatformat:2 }}</td>
+        <td>₹{{ ord.premium|floatformat:0 }}</td>
+        <td class="{% if ord.realized_pnl > 0 %}pnl-pos{% elif ord.realized_pnl < 0 %}pnl-neg{% endif %}">
+          {% if ord.realized_pnl %}₹{{ ord.realized_pnl|floatformat:2 }}{% else %}—{% endif %}
+        </td>
+        <td><span class="pill pill-{{ ord.status }}">{{ ord.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No F&amp;O orders yet.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
