@@ -1,64 +1,123 @@
 {% extends "paper_trading/base.html" %}
-{% block title %}F&O Order — Findoc Paper Trade{% endblock %}
-{% block page_title %}F&O Order{% endblock %}
+{% block title %}F&O Trade — TradePilot{% endblock %}
+{% block page_title %}F&O Trade{% endblock %}
 {% block nav_fno_order %}active{% endblock %}
 {% block sidebar_cash %}₹{{ portfolio.cash_balance|floatformat:0 }}{% endblock %}
 
 {% block head_extra %}
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
+  /* ── SPLIT LAYOUT ── */
+  .page-body { padding: 0 !important; overflow: hidden !important; display: flex; }
+  .workspace  { display: flex; flex: 1; overflow: hidden; }
+
+  /* Chart panel (left) */
+  .chart-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    background: var(--s1);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .chart-sym   { font-size: 17px; font-weight: 700; color: var(--text); }
+  .chart-spot  { font-size: 15px; font-weight: 600; color: var(--orange); }
+  .chart-name  { font-size: 11px; color: var(--text2); flex: 1; }
+  .period-tabs { display: flex; gap: 3px; margin-left: auto; }
+  .period-tab  {
+    padding: 3px 9px; border-radius: 5px; font-size: 10px; font-weight: 600;
+    border: none; cursor: pointer;
+    background: var(--s3); color: var(--text3); transition: all .15s;
+  }
+  .period-tab.active { background: var(--orange); color: #fff; }
+
+  .chart-placeholder {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text3); gap: 10px; font-size: 13px;
+  }
+  #lw-chart { flex: 1; }
+
+  /* Order panel (right) */
+  .order-panel {
+    width: 400px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+  .order-panel-inner { padding: 18px; }
+
+  /* Override form-card inside order panel */
+  .order-panel .form-card {
+    background: var(--s1);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .order-panel .form-card-title { margin-bottom: 14px; }
+
   /* ── INSTRUMENT TYPE TOGGLE ── */
-  .type-toggle { display: flex; gap: 10px; flex-wrap: wrap; }
+  .type-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
   .type-btn {
-    flex: 1; min-width: 120px; padding: 14px 12px;
-    border-radius: 10px; border: 1.5px solid var(--border2);
+    flex: 1; min-width: 90px; padding: 11px 8px;
+    border-radius: 9px; border: 1.5px solid var(--border2);
     cursor: pointer; text-align: center; transition: all .15s;
-    background: var(--surface2);
+    background: var(--s2);
   }
   .type-btn input[type=radio] { display: none; }
-  .type-label  { font-size: 14px; font-weight: 700; color: var(--text); display: block; margin-bottom: 3px; }
-  .type-desc   { font-size: 11px; color: var(--text3); display: block; }
-  .type-detail { font-size: 10px; color: var(--text3); display: block; margin-top: 6px; line-height: 1.4; text-align: left; }
+  .type-label  { font-size: 12px; font-weight: 700; color: var(--text); display: block; margin-bottom: 2px; }
+  .type-desc   { font-size: 10px; color: var(--text3); display: block; }
+  .type-detail { font-size: 9px;  color: var(--text3); display: block; margin-top: 5px; line-height: 1.35; text-align: left; }
   .type-btn:has(input:checked) { border-color: var(--orange); background: rgba(249,115,22,.08); }
   .type-btn.ce:has(input:checked)  { border-color: var(--blue);   background: rgba(59,130,246,.08); }
-  .type-btn.ce:has(input:checked) .type-label { color: var(--blue); }
+  .type-btn.ce:has(input:checked) .type-label  { color: var(--blue); }
   .type-btn.pe:has(input:checked)  { border-color: var(--red);    background: rgba(239,68,68,.08); }
-  .type-btn.pe:has(input:checked) .type-label { color: var(--red); }
+  .type-btn.pe:has(input:checked) .type-label  { color: var(--red); }
   .type-btn.fut:has(input:checked) { border-color: var(--purple); background: rgba(139,92,246,.08); }
   .type-btn.fut:has(input:checked) .type-label { color: var(--purple); }
 
   /* ── STRIKE GRID ── */
   .strike-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    gap: 8px; margin-top: 12px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 6px; margin-top: 10px;
   }
   .strike-btn {
-    padding: 9px 6px; border-radius: 8px; border: 1.5px solid var(--border2);
-    cursor: pointer; text-align: center; font-size: 13px; font-weight: 600;
-    background: var(--surface2); color: var(--text); transition: all .15s; user-select: none;
+    padding: 7px 4px; border-radius: 7px; border: 1.5px solid var(--border2);
+    cursor: pointer; text-align: center; font-size: 12px; font-weight: 600;
+    background: var(--s2); color: var(--text); transition: all .15s; user-select: none;
   }
-  .strike-btn:hover { border-color: var(--orange); background: rgba(249,115,22,.08); }
+  .strike-btn:hover  { border-color: var(--orange); background: rgba(249,115,22,.08); }
   .strike-btn.selected { border-color: var(--orange); background: rgba(249,115,22,.12); color: var(--orange); }
-  .strike-btn.atm { border-color: var(--text3); }
-  .strike-tag { font-size: 9px; font-weight: 700; color: var(--text3); display: block; }
+  .strike-btn.atm    { border-color: var(--text3); }
+  .strike-tag { font-size: 8px; font-weight: 700; color: var(--text3); display: block; }
 
   /* ── PRICING PANEL ── */
   .pricing-panel {
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 18px 20px;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 16px; margin-top: 18px;
+    background: var(--s2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-top: 14px;
   }
-  .pv-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
-  .pv-val   { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 3px; }
+  .pv-label { font-size: 9px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+  .pv-val   { font-size: 16px; font-weight: 700; color: var(--text); margin-top: 3px; }
   .pv-val.green { color: var(--green); }
-  .pv-val.muted { color: var(--text2); font-size: 14px; }
-  .pv-desc  { font-size: 10px; color: var(--text3); margin-top: 4px; line-height: 1.3; }
+  .pv-val.muted { color: var(--text2); font-size: 13px; }
+  .pv-desc  { font-size: 9px; color: var(--text3); margin-top: 3px; line-height: 1.3; }
 
-  /* ── BUY / SELL BUTTONS ── */
-  .order-side { display: flex; gap: 10px; margin-top: 20px; }
+  /* ── BUY / SELL ── */
+  .order-side { display: flex; gap: 8px; margin-top: 16px; }
   .btn-buy, .btn-sell {
-    flex: 1; padding: 14px; border-radius: 10px;
-    border: none; font-size: 15px; font-weight: 700;
+    flex: 1; padding: 12px; border-radius: 10px;
+    border: none; font-size: 14px; font-weight: 700;
     cursor: pointer; transition: opacity .15s; font-family: 'Inter', sans-serif;
   }
   .btn-buy  { background: var(--green); color: #fff; }
@@ -67,8 +126,8 @@
 
   .spot-display {
     padding: 10px 14px; border-radius: 8px;
-    border: 1px solid var(--border2); background: var(--surface2);
-    font-size: 14px; font-weight: 600; color: var(--text); min-height: 42px;
+    border: 1px solid var(--border2); background: var(--s2);
+    font-size: 13px; font-weight: 600; color: var(--text); min-height: 42px;
   }
 </style>
 {% endblock %}
@@ -78,154 +137,240 @@
 {% endblock %}
 
 {% block content %}
-<form method="post" id="fno-form" style="max-width:860px;">
-  {% csrf_token %}
+<div class="workspace">
 
-  <!-- STEP 1: Underlying -->
-  <div class="form-card">
-    <div class="form-card-title">1 · Underlying</div>
-    <div class="form-grid">
-      <div>
-        <label class="form-label">Underlying Symbol</label>
-        <input type="text" id="underlying-input" name="underlying" class="form-input"
-               value="{{ underlying }}" placeholder="e.g. NIFTY, RELIANCE"
-               autocomplete="off" style="text-transform:uppercase;">
+  <!-- ── CHART PANEL ── -->
+  <div class="chart-panel">
+    <div class="chart-header">
+      <div class="chart-sym"  id="chart-sym">{{ underlying }}</div>
+      <div class="chart-spot" id="chart-spot">{% if spot %}₹{{ spot|floatformat:2 }}{% else %}—{% endif %}</div>
+      <div class="chart-name" id="chart-name"></div>
+      <div class="period-tabs" id="period-tabs" style="display:none;">
+        <button class="period-tab" onclick="loadChart('1d')">1D</button>
+        <button class="period-tab" onclick="loadChart('5d')">5D</button>
+        <button class="period-tab" onclick="loadChart('1mo')">1M</button>
+        <button class="period-tab" onclick="loadChart('3mo')">3M</button>
+        <button class="period-tab active" onclick="loadChart('6mo')">6M</button>
+        <button class="period-tab" onclick="loadChart('1y')">1Y</button>
       </div>
-      <div>
-        <label class="form-label">Spot Price</label>
-        <div class="spot-display" id="spot-display">
-          {% if spot %}₹{{ spot|floatformat:2 }}{% else %}—{% endif %}
+    </div>
+    <div class="chart-placeholder" id="chart-placeholder">
+      <svg width="52" height="52" fill="none" stroke="var(--text3)" stroke-width="1.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <p>Underlying chart loads automatically</p>
+    </div>
+    <div id="lw-chart" style="display:none;flex:1;"></div>
+  </div>
+
+  <!-- ── ORDER PANEL ── -->
+  <div class="order-panel">
+    <div class="order-panel-inner">
+    <form method="post" id="fno-form">
+      {% csrf_token %}
+
+      <!-- STEP 1: Underlying -->
+      <div class="form-card">
+        <div class="form-card-title">1 · Underlying</div>
+        <div class="form-grid">
+          <div>
+            <label class="form-label">Symbol</label>
+            <input type="text" id="underlying-input" name="underlying" class="form-input"
+                   value="{{ underlying }}" placeholder="NIFTY, RELIANCE…"
+                   autocomplete="off" style="text-transform:uppercase;">
+          </div>
+          <div>
+            <label class="form-label">Spot Price</label>
+            <div class="spot-display" id="spot-display">
+              {% if spot %}₹{{ spot|floatformat:2 }}{% else %}—{% endif %}
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- STEP 2: Instrument Type -->
+      <div class="form-card">
+        <div class="form-card-title">2 · Instrument Type</div>
+        <div class="type-toggle">
+          <label class="type-btn ce">
+            <input type="radio" name="instrument_type" value="CE" {% if itype == 'CE' %}checked{% endif %} onchange="onTypeChange()">
+            <span class="type-label">CALL (CE)</span>
+            <span class="type-desc">Bullish · Buy right</span>
+            <span class="type-detail">Profit when price rises above strike. Max loss = premium.</span>
+          </label>
+          <label class="type-btn pe">
+            <input type="radio" name="instrument_type" value="PE" {% if itype == 'PE' %}checked{% endif %} onchange="onTypeChange()">
+            <span class="type-label">PUT (PE)</span>
+            <span class="type-desc">Bearish · Sell right</span>
+            <span class="type-detail">Profit when price falls below strike. Max loss = premium.</span>
+          </label>
+          <label class="type-btn fut">
+            <input type="radio" name="instrument_type" value="FUT" {% if itype == 'FUT' %}checked{% endif %} onchange="onTypeChange()">
+            <span class="type-label">FUTURE</span>
+            <span class="type-desc">Tracks spot directly</span>
+            <span class="type-detail">Unlimited P&amp;L. Requires SPAN margin.</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- STEP 3: Expiry & Strike -->
+      <div class="form-card">
+        <div class="form-card-title">3 · Expiry &amp; Strike</div>
+        <div class="form-grid">
+          <div>
+            <label class="form-label">Expiry Date</label>
+            <select name="expiry" id="expiry-select" class="form-select" onchange="fetchPrice()">
+              {% for exp in expiries %}
+              <option value="{{ exp|date:'Y-m-d' }}" {% if exp|date:'Y-m-d' == expiry_str %}selected{% endif %}>
+                {{ exp|date:"d M Y" }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="strike-input-wrap">
+            <label class="form-label">Strike Price</label>
+            <input type="number" name="strike" id="strike-input" class="form-input"
+                   placeholder="e.g. 24000" step="any" onchange="fetchPrice()">
+          </div>
+        </div>
+
+        <div id="strike-grid-wrap">
+          <div style="margin-top:14px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;font-weight:600;color:var(--text2);">Quick Select</span>
+            <span style="font-size:10px;color:var(--text3);">ATM = closest to spot</span>
+          </div>
+          <div class="strike-grid" id="strike-grid">
+            {% for s in strikes %}
+            <div class="strike-btn" onclick="selectStrike({{ s }})" id="strike-{{ s }}">{{ s }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Lots & Pricing -->
+      <div class="form-card">
+        <div class="form-card-title">4 · Lots &amp; Live Price</div>
+        <div class="form-grid">
+          <div>
+            <label class="form-label">Number of Lots</label>
+            <input type="number" name="lots" id="lots-input" class="form-input"
+                   value="1" min="1" step="1" onchange="updateMargin()">
+          </div>
+          <div>
+            <label class="form-label">Lot Size</label>
+            <div class="spot-display"><span id="lot-size-display">{{ lot_size }}</span> units/lot</div>
+            <div class="form-hint">NSE-mandated minimum trade size.</div>
+          </div>
+        </div>
+
+        <div class="pricing-panel" id="pricing-panel">
+          <div class="pv">
+            <div class="pv-label">LTP</div>
+            <div class="pv-val green" id="pv-price">{% if atm_price %}₹{{ atm_price }}{% else %}—{% endif %}</div>
+            <div class="pv-desc">Option market price</div>
+          </div>
+          <div class="pv">
+            <div class="pv-label">Delta</div>
+            <div class="pv-val muted" id="pv-delta">—</div>
+            <div class="pv-desc">₹ change / ₹1 spot move</div>
+          </div>
+          <div class="pv">
+            <div class="pv-label">Theta / day</div>
+            <div class="pv-val muted" id="pv-theta">—</div>
+            <div class="pv-desc">Daily time decay</div>
+          </div>
+          <div class="pv">
+            <div class="pv-label">IV</div>
+            <div class="pv-val muted" id="pv-iv">—</div>
+            <div class="pv-desc">Implied volatility</div>
+          </div>
+          <div class="pv">
+            <div class="pv-label">DTE</div>
+            <div class="pv-val muted" id="pv-dte">—</div>
+            <div class="pv-desc">Days to expiry</div>
+          </div>
+          <div class="pv">
+            <div class="pv-label">Margin / Premium</div>
+            <div class="pv-val" id="pv-margin" style="color:var(--orange);">—</div>
+            <div class="pv-desc">Cash blocked</div>
+          </div>
+        </div>
+
+        <input type="hidden" name="computed_price" id="computed-price">
+
+        <div class="order-side">
+          <button type="submit" name="order_type" value="BUY"  class="btn-buy">BUY / Long</button>
+          <button type="submit" name="order_type" value="SELL" class="btn-sell">SELL / Short</button>
+        </div>
+      </div>
+    </form>
     </div>
   </div>
-
-  <!-- STEP 2: Instrument Type -->
-  <div class="form-card">
-    <div class="form-card-title">2 · Instrument Type</div>
-    <div class="type-toggle">
-      <label class="type-btn ce">
-        <input type="radio" name="instrument_type" value="CE" {% if itype == 'CE' %}checked{% endif %} onchange="onTypeChange()">
-        <span class="type-label">CALL (CE)</span>
-        <span class="type-desc">Right to buy · Bullish</span>
-        <span class="type-detail">Profit when price rises above strike. Loss limited to premium paid.</span>
-      </label>
-      <label class="type-btn pe">
-        <input type="radio" name="instrument_type" value="PE" {% if itype == 'PE' %}checked{% endif %} onchange="onTypeChange()">
-        <span class="type-label">PUT (PE)</span>
-        <span class="type-desc">Right to sell · Bearish</span>
-        <span class="type-detail">Profit when price falls below strike. Loss limited to premium paid.</span>
-      </label>
-      <label class="type-btn fut">
-        <input type="radio" name="instrument_type" value="FUT" {% if itype == 'FUT' %}checked{% endif %} onchange="onTypeChange()">
-        <span class="type-label">FUTURE</span>
-        <span class="type-desc">Obligation to buy/sell</span>
-        <span class="type-detail">Tracks underlying price directly. Profits &amp; losses are unlimited. Requires SPAN margin.</span>
-      </label>
-    </div>
-  </div>
-
-  <!-- STEP 3: Expiry & Strike -->
-  <div class="form-card">
-    <div class="form-card-title">3 · Expiry &amp; Strike</div>
-    <div class="form-grid">
-      <div>
-        <label class="form-label">Expiry Date</label>
-        <select name="expiry" id="expiry-select" class="form-select" onchange="fetchPrice()">
-          {% for exp in expiries %}
-          <option value="{{ exp|date:'Y-m-d' }}" {% if exp|date:'Y-m-d' == expiry_str %}selected{% endif %}>
-            {{ exp|date:"d M Y" }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div id="strike-input-wrap">
-        <label class="form-label">Strike Price</label>
-        <input type="number" name="strike" id="strike-input" class="form-input"
-               placeholder="e.g. 24000" step="any" onchange="fetchPrice()">
-      </div>
-    </div>
-
-    <div id="strike-grid-wrap">
-      <div style="margin-top:16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:12px;font-weight:600;color:var(--text2);">Quick Strike Select</span>
-        <span style="font-size:11px;color:var(--text3);">ATM = At The Money (closest to spot price)</span>
-      </div>
-      <div class="strike-grid" id="strike-grid">
-        {% for s in strikes %}
-        <div class="strike-btn" onclick="selectStrike({{ s }})" id="strike-{{ s }}">{{ s }}</div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 4: Lots & Pricing -->
-  <div class="form-card">
-    <div class="form-card-title">4 · Lots &amp; Live Price</div>
-    <div class="form-grid">
-      <div>
-        <label class="form-label">Number of Lots</label>
-        <input type="number" name="lots" id="lots-input" class="form-input"
-               value="1" min="1" step="1" onchange="updateMargin()">
-      </div>
-      <div>
-        <label class="form-label">Lot Size</label>
-        <div class="spot-display"><span id="lot-size-display">{{ lot_size }}</span> units/lot</div>
-        <div class="form-hint">NSE-mandated minimum trade size. You trade in multiples of this.</div>
-      </div>
-    </div>
-
-    <div class="pricing-panel" id="pricing-panel">
-      <div class="pv">
-        <div class="pv-label">Option Price (LTP)</div>
-        <div class="pv-val green" id="pv-price">{% if atm_price %}₹{{ atm_price }}{% else %}—{% endif %}</div>
-        <div class="pv-desc">Current market price of this option contract</div>
-      </div>
-      <div class="pv">
-        <div class="pv-label">Delta</div>
-        <div class="pv-val muted" id="pv-delta">—</div>
-        <div class="pv-desc">₹ change in option price per ₹1 move in underlying</div>
-      </div>
-      <div class="pv">
-        <div class="pv-label">Theta / day</div>
-        <div class="pv-val muted" id="pv-theta">—</div>
-        <div class="pv-desc">Premium lost per day due to time decay</div>
-      </div>
-      <div class="pv">
-        <div class="pv-label">IV</div>
-        <div class="pv-val muted" id="pv-iv">—</div>
-        <div class="pv-desc">Implied volatility — higher IV = costlier options</div>
-      </div>
-      <div class="pv">
-        <div class="pv-label">Days to Expiry</div>
-        <div class="pv-val muted" id="pv-dte">—</div>
-        <div class="pv-desc">Calendar days left before the contract expires</div>
-      </div>
-      <div class="pv">
-        <div class="pv-label">Margin / Premium</div>
-        <div class="pv-val" id="pv-margin" style="color:var(--orange);">—</div>
-        <div class="pv-desc">Cash blocked: full premium for buyers, SPAN margin for sellers &amp; futures</div>
-      </div>
-    </div>
-
-    <input type="hidden" name="computed_price" id="computed-price">
-
-    <div class="order-side">
-      <button type="submit" name="order_type" value="BUY" class="btn-buy">BUY / Long</button>
-      <button type="submit" name="order_type" value="SELL" class="btn-sell">SELL / Short</button>
-    </div>
-  </div>
-</form>
+</div>
 
 <script>
 const PRICE_API   = "{% url 'paper_trading:fno_price' %}";
 const STRIKES_API = "{% url 'paper_trading:fno_strikes' %}";
+const OHLC_API    = "{% url 'paper_trading:stock_ohlc' %}";
 
 let currentSpot = {{ spot|default:'null' }};
-let currentPrice = null;
-let currentMarginBuy = null;
-let currentMarginSell = null;
+let currentPrice = null, currentMarginBuy = null, currentMarginSell = null;
+let lwChart = null, candleSeries = null;
+let currentUnderlying = '{{ underlying }}';
+let currentPeriod = '6mo';
 
+/* ── Chart ─────────────────────────────────────────────────────── */
+const lwEl = document.getElementById('lw-chart');
+const placeholder = document.getElementById('chart-placeholder');
+
+function initChart() {
+  lwEl.innerHTML = '';
+  lwChart = LightweightCharts.createChart(lwEl, {
+    layout:  { background: { color: '#07090f' }, textColor: '#7e95b5' },
+    grid:    { vertLines: { color: '#1a2540' }, horzLines: { color: '#1a2540' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#1a2540' },
+    timeScale: { borderColor: '#1a2540', timeVisible: true },
+    width: lwEl.clientWidth, height: lwEl.clientHeight || 400,
+  });
+  candleSeries = lwChart.addCandlestickSeries({
+    upColor:'#00c896', downColor:'#ff3b5c',
+    borderUpColor:'#00c896', borderDownColor:'#ff3b5c',
+    wickUpColor:'#00c896', wickDownColor:'#ff3b5c',
+  });
+  new ResizeObserver(() => lwChart && lwChart.resize(lwEl.clientWidth, lwEl.clientHeight)).observe(lwEl);
+}
+
+function loadChart(period) {
+  period = period || '6mo';
+  currentPeriod = period;
+  const sym = currentUnderlying;
+  if (!sym) return;
+
+  document.querySelectorAll('.period-tab').forEach(t => {
+    const map = {'1D':'1d','5D':'5d','1M':'1mo','3M':'3mo','6M':'6mo','1Y':'1y'};
+    t.classList.toggle('active', map[t.textContent.trim()] === period);
+  });
+
+  placeholder.style.display = 'none';
+  lwEl.style.display = 'block';
+  document.getElementById('period-tabs').style.display = 'flex';
+  if (!lwChart) initChart();
+
+  fetch(`${OHLC_API}?symbol=${encodeURIComponent(sym)}&period=${period}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.candles?.length) {
+        lwChart.applyOptions({ timeScale: { timeVisible: !!data.intraday } });
+        candleSeries.setData(data.candles);
+        lwChart.timeScale().fitContent();
+      } else {
+        placeholder.style.display = 'flex';
+        lwEl.style.display = 'none';
+        document.getElementById('period-tabs').style.display = 'none';
+      }
+    }).catch(() => {});
+}
+
+/* ── F&O pricing ─────────────────────────────────────────────── */
 function getType() {
   const r = document.querySelector('input[name=instrument_type]:checked');
   return r ? r.value : 'CE';
@@ -258,25 +403,23 @@ function fetchPrice() {
   let url = `${PRICE_API}?underlying=${underlying}&type=${itype}&expiry=${expiry}`;
   if (itype !== 'FUT') url += `&strike=${strike}`;
 
-  fetch(url)
-    .then(r => r.json())
-    .then(d => {
-      if (d.error) { setPricingPanel(); return; }
-      currentPrice      = d.price;
-      currentMarginBuy  = d.margin_buy;
-      currentMarginSell = d.margin_sell;
-      currentSpot       = d.spot;
+  fetch(url).then(r => r.json()).then(d => {
+    if (d.error) { setPricingPanel(); return; }
+    currentPrice      = d.price;
+    currentMarginBuy  = d.margin_buy;
+    currentMarginSell = d.margin_sell;
+    currentSpot       = d.spot;
 
-      document.getElementById('spot-display').textContent = '₹' + d.spot.toLocaleString('en-IN', {minimumFractionDigits:2});
-      document.getElementById('pv-price').textContent     = '₹' + d.price;
-      document.getElementById('pv-delta').textContent     = d.delta != null ? d.delta : '—';
-      document.getElementById('pv-theta').textContent     = d.theta != null ? d.theta : '—';
-      document.getElementById('pv-iv').textContent        = d.iv    != null ? d.iv + '%' : '—';
-      document.getElementById('pv-dte').textContent       = d.days  != null ? d.days + 'd' : '—';
-      document.getElementById('computed-price').value     = d.price;
-      updateMargin();
-    })
-    .catch(() => setPricingPanel());
+    document.getElementById('spot-display').textContent = '₹' + d.spot.toLocaleString('en-IN', {minimumFractionDigits:2});
+    document.getElementById('chart-spot').textContent   = '₹' + d.spot.toLocaleString('en-IN', {minimumFractionDigits:2});
+    document.getElementById('pv-price').textContent     = '₹' + d.price;
+    document.getElementById('pv-delta').textContent     = d.delta != null ? d.delta : '—';
+    document.getElementById('pv-theta').textContent     = d.theta != null ? d.theta : '—';
+    document.getElementById('pv-iv').textContent        = d.iv    != null ? d.iv + '%' : '—';
+    document.getElementById('pv-dte').textContent       = d.days  != null ? d.days + 'd' : '—';
+    document.getElementById('computed-price').value     = d.price;
+    updateMargin();
+  }).catch(() => setPricingPanel());
 }
 
 function updateMargin() {
@@ -292,14 +435,18 @@ function setPricingPanel() {
   });
 }
 
+/* ── Load strikes when underlying changes ── */
 function loadStrikes(sym) {
   if (!sym || sym.length < 2) return;
+  currentUnderlying = sym;
+  document.getElementById('chart-sym').textContent = sym;
   fetch(`${STRIKES_API}?underlying=${sym}`)
     .then(r => r.json())
     .then(d => {
       if (d.error || !d.spot) return;
       currentSpot = d.spot;
       document.getElementById('spot-display').textContent = '₹' + d.spot.toLocaleString('en-IN', {minimumFractionDigits:2});
+      document.getElementById('chart-spot').textContent   = '₹' + d.spot.toLocaleString('en-IN', {minimumFractionDigits:2});
       document.getElementById('lot-size-display').textContent = d.lot_size;
 
       const grid = document.getElementById('strike-grid');
@@ -314,8 +461,8 @@ function loadStrikes(sym) {
         grid.appendChild(btn);
       });
       selectStrike(d.strikes[mid]);
-    })
-    .catch(() => {});
+      loadChart(currentPeriod);
+    }).catch(() => {});
 }
 
 let underlyingTimer;
@@ -330,7 +477,7 @@ document.getElementById('underlying-input').addEventListener('input', function()
 
 window.addEventListener('DOMContentLoaded', () => {
   const sym = document.getElementById('underlying-input').value.trim().toUpperCase();
-  if (sym) loadStrikes(sym);
+  if (sym) { loadStrikes(sym); }
 });
 </script>
 {% endblock %}

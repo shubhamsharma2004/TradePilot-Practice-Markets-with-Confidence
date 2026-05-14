@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
 
@@ -18,6 +19,13 @@ from .fno_market import get_fno_price, get_margin, get_upcoming_expiries, get_at
 # ─── helpers ────────────────────────────────────────────────────────────────
 
 def get_or_create_portfolio(request):
+    if request.user.is_authenticated:
+        portfolio, _ = PaperPortfolio.objects.get_or_create(
+            user=request.user,
+            defaults={'session_key': None},
+        )
+        return portfolio
+    # Anonymous fallback
     if not request.session.session_key:
         request.session.create()
     key = request.session.session_key
@@ -27,7 +35,7 @@ def get_or_create_portfolio(request):
 
 # ─── dashboard ──────────────────────────────────────────────────────────────
 
-
+@login_required
 def dashboard(request):
     portfolio = get_or_create_portfolio(request)
     positions = list(portfolio.positions.all())
@@ -85,7 +93,7 @@ def dashboard(request):
 
 # ─── place order ────────────────────────────────────────────────────────────
 
-
+@login_required
 def place_order(request):
     portfolio = get_or_create_portfolio(request)
 
@@ -261,7 +269,7 @@ def _update_position_sell(portfolio, symbol, quantity, price):
 
 # ─── cancel order ────────────────────────────────────────────────────────────
 
-
+@login_required
 def cancel_order(request, order_id):
     portfolio = get_or_create_portfolio(request)
     order = get_object_or_404(PaperOrder, id=order_id, portfolio=portfolio, status=PaperOrder.PENDING)
@@ -280,7 +288,7 @@ def cancel_order(request, order_id):
 
 # ─── order history ───────────────────────────────────────────────────────────
 
-
+@login_required
 def order_history(request):
     portfolio = get_or_create_portfolio(request)
     orders    = portfolio.orders.all()
@@ -292,7 +300,7 @@ def order_history(request):
 
 # ─── analytics ───────────────────────────────────────────────────────────────
 
-
+@login_required
 def analytics(request):
     portfolio = get_or_create_portfolio(request)
     executed  = portfolio.orders.filter(status=PaperOrder.EXECUTED)
@@ -434,6 +442,18 @@ def analytics(request):
                     'and track your performance daily.',
         })
 
+    # ── F&O Analytics ────────────────────────────────────────────────────────
+    fno_executed = list(
+        portfolio.fno_orders.filter(status=FnOOrder.EXECUTED).select_related('instrument')
+    )
+    fno_closed = [o for o in fno_executed if o.realized_pnl and float(o.realized_pnl) != 0]
+    fno_total_realized = sum(float(o.realized_pnl) for o in fno_closed)
+    fno_wins   = [o for o in fno_closed if float(o.realized_pnl) > 0]
+    fno_losses = [o for o in fno_closed if float(o.realized_pnl) < 0]
+    fno_win_rate = round(len(fno_wins) / len(fno_closed) * 100, 1) if fno_closed else 0
+    fno_best  = max(fno_closed, key=lambda o: float(o.realized_pnl), default=None)
+    fno_worst = min(fno_closed, key=lambda o: float(o.realized_pnl), default=None)
+
     context = {
         'portfolio':    portfolio,
         'total_trades': len(executed),
@@ -444,8 +464,18 @@ def analytics(request):
         'avg_loss':     avg_loss,
         'best_trade':   best_trade,
         'worst_trade':  worst_trade,
-        'trade_pnls':   trade_pnls[-20:],   # last 20
+        'trade_pnls':   trade_pnls[-20:],
         'insights':     insights,
+        # F&O
+        'fno_total':          len(fno_executed),
+        'fno_closed_count':   len(fno_closed),
+        'fno_total_realized': round(fno_total_realized, 2),
+        'fno_win_rate':       fno_win_rate,
+        'fno_wins_count':     len(fno_wins),
+        'fno_losses_count':   len(fno_losses),
+        'fno_best':           fno_best,
+        'fno_worst':          fno_worst,
+        'fno_recent':         fno_executed[:20],
     }
     return render(request, 'paper_trading/analytics.html', context)
 
@@ -544,6 +574,7 @@ def nav_history_api(request):
 
 
 
+@login_required
 def what_if_simulator(request):
     portfolio = get_or_create_portfolio(request)
     return render(request, 'paper_trading/simulator.html', {'portfolio': portfolio})
@@ -668,8 +699,15 @@ def stock_ohlc_api(request):
 
     yf_period, yf_interval, is_intraday = PERIOD_MAP[period]
 
+    # Map index names to their yfinance tickers
+    _OHLC_INDEX_MAP = {
+        'NIFTY': '^NSEI', 'BANKNIFTY': '^NSEBANK', 'SENSEX': '^BSESN',
+        'FINNIFTY': 'NIFTY_FIN_SERVICE.NS', 'MIDCPNIFTY': '^NSEMDCP50',
+    }
+    yf_sym = _OHLC_INDEX_MAP.get(symbol, symbol + '.NS')
+
     try:
-        ticker = yf.Ticker(symbol + '.NS')
+        ticker = yf.Ticker(yf_sym)
         hist   = ticker.history(period=yf_period, interval=yf_interval)
         if hist.empty:
             return JsonResponse({'error': 'No data'}, status=404)
@@ -741,6 +779,7 @@ def _fno_get_or_create_instrument(underlying, itype, expiry, strike, lot_size):
 
 # ─── F&O dashboard ────────────────────────────────────────────────────────────
 
+@login_required
 def fno_dashboard(request):
     portfolio  = get_or_create_portfolio(request)
     positions  = list(portfolio.fno_positions.select_related('instrument').all())
@@ -776,6 +815,7 @@ def fno_dashboard(request):
 
 # ─── F&O order placement ──────────────────────────────────────────────────────
 
+@login_required
 def fno_order(request):
     portfolio = get_or_create_portfolio(request)
 
@@ -953,6 +993,7 @@ def fno_order(request):
 
 # ─── F&O close position ───────────────────────────────────────────────────────
 
+@login_required
 def fno_close_position(request, position_id):
     portfolio = get_or_create_portfolio(request)
     pos = get_object_or_404(FnOPosition, id=position_id, portfolio=portfolio)
@@ -995,6 +1036,7 @@ def fno_close_position(request, position_id):
 
 # ─── F&O order history ────────────────────────────────────────────────────────
 
+@login_required
 def fno_order_history(request):
     portfolio = get_or_create_portfolio(request)
     orders    = portfolio.fno_orders.select_related('instrument').all()
