@@ -8,6 +8,10 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "true").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://tradepilot.devshubh.in",
+    "https://tradepilot-practice-markets-with.onrender.com",
+]
 
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/paper-trading/"
