@@ -19,6 +19,35 @@
     overflow: hidden;
     border-right: 1px solid rgba(255,255,255,.06);
   }
+
+  /* ── MOBILE ── */
+  .mobile-chart-toggle {
+    display: none;
+    width: 100%; padding: 9px 14px;
+    border: none; border-bottom: 1px solid rgba(255,255,255,.06);
+    background: var(--s1); color: var(--text2);
+    font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+    cursor: pointer; text-align: left;
+    align-items: center; gap: 8px; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .mobile-chart-toggle svg { width: 14px; height: 14px; flex-shrink: 0; }
+  @media (max-width: 768px) {
+    .page-body { overflow: auto !important; flex-direction: column; padding-bottom: 76px !important; }
+    .workspace { flex-direction: column-reverse; overflow: visible; flex: none; }
+    .chart-panel {
+      height: 0; overflow: hidden; flex-shrink: 0;
+      border-right: none; border-top: 1px solid rgba(255,255,255,.06);
+      transition: height .3s cubic-bezier(.4,0,.2,1);
+    }
+    .chart-panel.mobile-expanded { height: 260px; }
+    #lw-chart { height: 100% !important; }
+    .chart-header { display: none; }
+    .order-panel { width: 100%; flex-shrink: 0; overflow: visible; }
+    .order-panel-inner { padding: 12px; }
+    .order-panel .form-card { padding: 14px 16px; }
+    .mobile-chart-toggle { display: flex; }
+  }
   .chart-header {
     display: flex;
     align-items: center;
@@ -139,8 +168,17 @@
 {% block content %}
 <div class="workspace">
 
+  <!-- CHART TOGGLE (mobile only) -->
+  <button class="mobile-chart-toggle" id="mobile-chart-toggle" onclick="toggleMobileChart()">
+    <span id="mobile-chart-label">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      View Chart
+    </span>
+    <svg id="mobile-chart-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transition:transform .3s;"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+
   <!-- ── CHART PANEL ── -->
-  <div class="chart-panel">
+  <div class="chart-panel" id="chart-panel-el">
     <div class="chart-header">
       <div class="chart-sym"  id="chart-sym">{{ underlying }}</div>
       <div class="chart-spot" id="chart-spot">{% if spot %}₹{{ spot|floatformat:2 }}{% else %}—{% endif %}</div>
@@ -171,11 +209,16 @@
       <div class="form-card">
         <div class="form-card-title">1 · Underlying</div>
         <div class="form-grid">
-          <div>
+          <div style="position:relative;">
             <label class="form-label">Symbol</label>
             <input type="text" id="underlying-input" name="underlying" class="form-input"
                    value="{{ underlying }}" placeholder="NIFTY, RELIANCE…"
                    autocomplete="off" style="text-transform:uppercase;">
+            <div id="fno-autocomplete" style="
+              position:absolute;top:100%;left:0;right:0;z-index:60;
+              background:var(--s2);border:1px solid var(--border2);
+              border-radius:0 0 8px 8px;max-height:220px;overflow-y:auto;display:none;">
+            </div>
           </div>
           <div>
             <label class="form-label">Spot Price</label>
@@ -310,12 +353,27 @@
 const PRICE_API   = "{% url 'paper_trading:fno_price' %}";
 const STRIKES_API = "{% url 'paper_trading:fno_strikes' %}";
 const OHLC_API    = "{% url 'paper_trading:stock_ohlc' %}";
+const SEARCH_API  = "{% url 'paper_trading:stock_search' %}";
 
 let currentSpot = {{ spot|default:'null' }};
 let currentPrice = null, currentMarginBuy = null, currentMarginSell = null;
 let lwChart = null, candleSeries = null;
 let currentUnderlying = '{{ underlying }}';
 let currentPeriod = '6mo';
+
+function toggleMobileChart() {
+  const panel   = document.getElementById('chart-panel-el');
+  const chevron = document.getElementById('mobile-chart-chevron');
+  const label   = document.getElementById('mobile-chart-label');
+  const isOpen  = panel.classList.toggle('mobile-expanded');
+  chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+  if (label) label.innerHTML = isOpen
+    ? '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Hide Chart'
+    : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> View Chart';
+  if (isOpen && currentUnderlying) {
+    setTimeout(() => loadChart(currentPeriod), 320);
+  }
+}
 
 /* ── Chart ─────────────────────────────────────────────────────── */
 const lwEl = document.getElementById('lw-chart');
@@ -465,14 +523,57 @@ function loadStrikes(sym) {
     }).catch(() => {});
 }
 
-let underlyingTimer;
-document.getElementById('underlying-input').addEventListener('input', function() {
+/* ── Autocomplete ────────────────────────────────────────────── */
+const underlyingInput = document.getElementById('underlying-input');
+const fnoAutocomplete = document.getElementById('fno-autocomplete');
+let underlyingTimer, searchTimer;
+
+function closeAutocomplete() { fnoAutocomplete.style.display = 'none'; fnoAutocomplete.innerHTML = ''; }
+
+underlyingInput.addEventListener('input', function() {
+  const q = this.value.trim();
   clearTimeout(underlyingTimer);
+  clearTimeout(searchTimer);
+
+  // search suggestions
+  if (q.length >= 2) {
+    searchTimer = setTimeout(() => {
+      fetch(`${SEARCH_API}?q=${encodeURIComponent(q)}`)
+        .then(r => r.json()).then(data => {
+          fnoAutocomplete.innerHTML = '';
+          if (!data.results.length) { closeAutocomplete(); return; }
+          data.results.forEach(item => {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;transition:background .12s;';
+            div.innerHTML = `<div><div style="font-size:13px;font-weight:700;color:var(--text);">${item.symbol}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${item.name}</div></div><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(249,115,22,.15);color:var(--orange);">${item.exchange}</span>`;
+            div.addEventListener('mouseover', () => div.style.background = 'var(--s3)');
+            div.addEventListener('mouseout',  () => div.style.background = '');
+            div.addEventListener('mousedown', e => {
+              e.preventDefault();
+              underlyingInput.value = item.symbol;
+              closeAutocomplete();
+              loadStrikes(item.symbol);
+            });
+            fnoAutocomplete.appendChild(div);
+          });
+          fnoAutocomplete.style.display = 'block';
+        }).catch(() => closeAutocomplete());
+    }, 280);
+  } else {
+    closeAutocomplete();
+  }
+
+  // also trigger loadStrikes after user stops typing
   underlyingTimer = setTimeout(() => {
-    const sym = this.value.trim().toUpperCase();
-    if (!sym || sym.length < 2) return;
-    loadStrikes(sym);
+    const sym = underlyingInput.value.trim().toUpperCase();
+    if (sym && sym.length >= 2) loadStrikes(sym);
   }, 600);
+});
+
+underlyingInput.addEventListener('blur', () => setTimeout(closeAutocomplete, 150));
+underlyingInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAutocomplete();
+  if (e.key === 'Enter') { closeAutocomplete(); loadStrikes(underlyingInput.value.trim().toUpperCase()); }
 });
 
 window.addEventListener('DOMContentLoaded', () => {

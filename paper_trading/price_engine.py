@@ -76,17 +76,23 @@ class PriceEngine:
         self._thread.start()
 
     def _fetch_one(self, symbol: str):
+        import math, pandas as pd
         try:
-            ticker = yf.Ticker(symbol + '.NS')
-            fi = ticker.fast_info
-            price = fi.last_price
-            if not price:
+            hist = yf.download(symbol + '.NS', period='5d', interval='1d',
+                               progress=False, auto_adjust=True)
+            if hist.empty:
                 return
-            prev_close  = fi.previous_close or price
-            day_high    = fi.day_high or price
-            day_low     = fi.day_low or price
-            change      = price - prev_close
-            change_pct  = (change / prev_close * 100) if prev_close else 0.0
+            if isinstance(hist.columns, pd.MultiIndex):
+                hist = hist.droplevel(1, axis=1)
+            price      = float(hist['Close'].iloc[-1])
+            prev_close = float(hist['Close'].iloc[-2]) if len(hist) >= 2 else price
+            day_high   = float(hist['High'].iloc[-1])
+            day_low    = float(hist['Low'].iloc[-1])
+            if math.isnan(price):
+                return
+            prev_close = prev_close if not math.isnan(prev_close) else price
+            change     = price - prev_close
+            change_pct = (change / prev_close * 100) if prev_close else 0.0
             with self._lock:
                 self._cache[symbol] = {
                     'symbol':     symbol,

@@ -50,6 +50,13 @@
   .period-tab.active { background: var(--orange); color: #fff; }
 
   .pos-row-pnl { font-size: 12px; font-weight: 600; }
+  .dash-charts-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 768px) {
+    .dash-charts-row { grid-template-columns: 1fr; }
+    .nav-chart-wrap { height: 160px; }
+    .donut-wrap { gap: 16px; }
+    .donut-canvas { width: 90px !important; height: 90px !important; }
+  }
 </style>
 {% endblock %}
 
@@ -108,7 +115,7 @@
 </div>
 
 <!-- TWO COLUMN: NAV chart + Donut -->
-<div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:24px;">
+<div class="dash-charts-row">
 
   <!-- NAV history chart -->
   <div class="table-card" style="padding:20px;margin-bottom:0;">

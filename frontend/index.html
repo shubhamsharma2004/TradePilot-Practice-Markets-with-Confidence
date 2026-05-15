@@ -1,21 +1,19 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}TradePilot{% endblock %}</title>
+  <title>Dashboard — TradePilot</title>
   <link rel="icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
   <link rel="shortcut icon" type="image/jpeg" href="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Apply saved theme before paint to prevent flash -->
   <script>
     (function(){
       var t = localStorage.getItem('tp-theme');
       if (t === 'light') document.documentElement.setAttribute('data-theme','light');
     })();
   </script>
-  {% block head_extra %}{% endblock %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg:       #07090f;
@@ -37,11 +35,9 @@
       --purple:   #9b72ff;
       --yellow:   #fbbf24;
       --sidebar-w: 220px;
-      /* Theme transition */
       --theme-transition: background .2s, color .2s, border-color .2s, box-shadow .2s;
     }
 
-    /* ── LIGHT THEME ── */
     [data-theme="light"] {
       --bg:      #f4f6fb;
       --s1:      #ffffff;
@@ -53,7 +49,6 @@
       --text2:   #475569;
       --text3:   #94a3b8;
     }
-    /* Light mode component overrides */
     [data-theme="light"] .sidebar           { background: #ffffff; border-right-color: rgba(0,0,0,.08); }
     [data-theme="light"] .sidebar-nav a     { color: rgba(0,0,0,.45); }
     [data-theme="light"] .sidebar-nav a:hover { background: rgba(0,0,0,.05); color: rgba(0,0,0,.8); }
@@ -83,19 +78,15 @@
     [data-theme="light"] .msg-error         { background: rgba(255,59,92,.07); }
     [data-theme="light"] .msg-success       { background: rgba(0,200,150,.07); }
 
-    /* Smooth transitions on everything that changes */
     *, *::before, *::after { transition: var(--theme-transition); }
-    /* But not layout/transform/opacity transitions (would break animations) */
     .sidebar-nav a, .profile-trigger, button, a { transition: all .15s; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 13px; }
 
-    /* ── APP SHELL ── */
     .app { display: flex; height: 100vh; overflow: hidden; }
 
-    /* ── SIDEBAR ── */
     .sidebar {
       width: var(--sidebar-w);
       background: #07090f;
@@ -106,7 +97,6 @@
       overflow: hidden;
     }
 
-    /* Brand */
     .sidebar-brand {
       padding: 16px 14px;
       display: flex;
@@ -127,7 +117,6 @@
     .brand-text span { font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -.3px; }
     .brand-text small { font-size: 9px; font-weight: 700; color: var(--orange); letter-spacing: .9px; text-transform: uppercase; margin-top: 1px; }
 
-    /* Nav scroll area */
     .sidebar-nav-wrap {
       flex: 1;
       overflow-y: auto;
@@ -137,7 +126,6 @@
     .sidebar-nav-wrap::-webkit-scrollbar { width: 2px; }
     .sidebar-nav-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.07); border-radius: 2px; }
 
-    /* Dividers between sections */
     .sidebar-divider {
       display: flex;
       align-items: center;
@@ -157,7 +145,6 @@
       background: rgba(255,255,255,.06);
     }
 
-    /* Nav items */
     .sidebar-nav { padding: 1px 7px; }
     .sidebar-nav a {
       display: flex;
@@ -183,7 +170,6 @@
     }
     .sidebar-nav a svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-    /* Promo card */
     .sidebar-promo {
       margin: 10px 7px 4px;
       border-radius: 12px;
@@ -225,14 +211,12 @@
     }
     .promo-btn:hover { opacity: .84; }
 
-    /* ── SIDEBAR PROFILE (bottom) ── */
     .sidebar-profile {
       border-top: 1px solid rgba(255,255,255,.06);
       flex-shrink: 0;
       position: relative;
     }
 
-    /* Expandable panel (slides up from trigger) */
     .profile-panel {
       overflow: hidden;
       max-height: 0;
@@ -268,7 +252,6 @@
     .profile-signout:hover { background: rgba(255,59,92,.1); color: var(--red); }
     .profile-signout svg  { width: 14px; height: 14px; flex-shrink: 0; }
 
-    /* ── THEME TOGGLE ROW ── */
     .theme-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 6px 12px;
@@ -281,7 +264,6 @@
     [data-theme="light"] .theme-row-label { color: rgba(0,0,0,.4); }
     .theme-row-label svg { width: 14px; height: 14px; }
 
-    /* Pill toggle switch */
     .theme-pill {
       width: 36px; height: 20px;
       border-radius: 10px;
@@ -308,7 +290,6 @@
       background: #fff;
     }
 
-    /* Trigger row */
     .profile-trigger {
       display: flex; align-items: center; gap: 10px;
       padding: 11px 10px;
@@ -338,7 +319,6 @@
     }
     .profile-trigger.open .profile-chevron { transform: rotate(180deg); }
 
-    /* ── MAIN ── */
     .main-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
     .topbar {
@@ -371,10 +351,8 @@
     }
     .tb-btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.25); }
 
-
     .page-body { flex: 1; overflow-y: auto; padding: 24px 28px; }
 
-    /* ── STAT CARDS ── */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
@@ -398,13 +376,11 @@
     .sc-val.down { color: var(--red); }
     .sc-sub  { font-size: 11px; color: var(--text3); margin-top: 6px; }
 
-    /* ── SECTION HEADER ── */
     .section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
     .section-link  { font-size: 12px; color: var(--orange); text-decoration: none; font-weight: 600; }
     .section-link:hover { text-decoration: underline; }
 
-    /* ── TABLE CARD ── */
     .table-card { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 24px; }
     .table-scroll { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
@@ -422,7 +398,6 @@
     tbody tr:last-child td { border-bottom: none; }
     tbody tr:hover { background: rgba(255,255,255,.03); }
 
-    /* ── BADGES & PILLS ── */
     .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px; }
     .badge-orange { background: rgba(255,122,0,.18);   color: var(--orange); }
     .badge-green  { background: rgba(0,200,150,.18);   color: var(--green); }
@@ -435,45 +410,15 @@
     .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
     .pill-BUY       { background: rgba(0,200,150,.18);   color: var(--green); }
     .pill-SELL      { background: rgba(255,59,92,.18);   color: var(--red); }
-    .pill-LONG      { background: rgba(0,200,150,.18);   color: var(--green); }
-    .pill-SHORT     { background: rgba(255,59,92,.18);   color: var(--red); }
     .pill-EXECUTED  { background: rgba(0,200,150,.18);   color: var(--green); }
     .pill-PENDING   { background: rgba(251,191,36,.18);  color: var(--yellow); }
-    .pill-REJECTED  { background: rgba(255,59,92,.18);   color: var(--red); }
-    .pill-CANCELLED { background: var(--s3); color: var(--text3); }
-    .pill-CE        { background: rgba(79,143,255,.18);  color: var(--blue); }
-    .pill-PE        { background: rgba(255,59,92,.18);   color: var(--red); }
-    .pill-FUT       { background: rgba(155,114,255,.18); color: var(--purple); }
 
     .pnl-pos { color: var(--green); font-weight: 700; }
     .pnl-neg { color: var(--red);   font-weight: 700; }
 
-    /* ── FORMS ── */
-    .form-card { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; padding: 24px 26px; margin-bottom: 18px; }
-    .form-card-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 20px; }
-    .form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-    .form-label  { font-size: 11px; font-weight: 600; color: var(--text3); display: block; margin-bottom: 7px; text-transform: uppercase; letter-spacing: .4px; }
-    .form-input, .form-select {
-      width: 100%; background: var(--s2); border: 1px solid var(--border2);
-      border-radius: 9px; padding: 11px 14px;
-      color: var(--text); font-size: 13px;
-      font-family: 'Inter', sans-serif; transition: border .15s, box-shadow .15s;
-    }
-    .form-input:focus, .form-select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,122,0,.12); }
-    .form-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
-
-    /* ── MESSAGES ── */
-    .messages { margin-bottom: 20px; }
-    .msg { padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 8px; border-left: 3px solid; }
-    .msg-error   { background: rgba(255,59,92,.1);  border-color: var(--red);   color: #ffaab8; }
-    .msg-success { background: rgba(0,200,150,.1);  border-color: var(--green); color: #5eead4; }
-
-    /* ── EMPTY STATE ── */
     .empty-state { text-align: center; padding: 56px 24px; color: var(--text3); font-size: 13px; }
     .empty-state a { color: var(--orange); text-decoration: none; font-weight: 600; }
 
-    /* ── ACTION BUTTON ── */
     .btn-action {
       font-size: 11px; font-weight: 600;
       padding: 5px 13px; border-radius: 7px;
@@ -482,10 +427,7 @@
       cursor: pointer; text-decoration: none; transition: all .15s;
     }
     .btn-action:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-action.danger { border-color: rgba(255,59,92,.4); color: var(--red); }
-    .btn-action.danger:hover { background: rgba(255,59,92,.12); }
 
-    /* ── HAMBURGER ── */
     .hamburger-btn {
       display: none;
       border: none; background: transparent;
@@ -497,7 +439,6 @@
     .hamburger-btn svg { width: 20px; height: 20px; display: block; }
     [data-theme="light"] .hamburger-btn:hover { background: rgba(0,0,0,.06); }
 
-    /* ── DRAWER OVERLAY ── */
     .drawer-overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(0,0,0,.55); z-index: 200;
@@ -505,7 +446,6 @@
     }
     .drawer-overlay.open { display: block; }
 
-    /* ── MOBILE BOTTOM NAV ── */
     .mobile-bottom-nav {
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -530,9 +470,7 @@
     .mobile-nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
     .mobile-nav-item.active, .mobile-nav-item:active { color: var(--orange); }
 
-    /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
-      /* Sidebar becomes a slide-in drawer */
       .sidebar {
         position: fixed;
         top: 0; bottom: 0; left: 0;
@@ -547,22 +485,17 @@
       }
       .hamburger-btn { display: block; }
       .mobile-bottom-nav { display: block; }
-      /* Topbar */
       .topbar { padding: 0 12px; gap: 8px; }
       .topbar-title { font-size: 14px; }
       .tb-btn { padding: 6px 12px; font-size: 11px; }
       .tb-btn-ghost { display: none; }
-      /* Content */
       .page-body { padding: 14px; padding-bottom: 76px; }
-      /* Cards */
       .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
       .stat-card { padding: 14px 16px; border-radius: 12px; }
       .sc-val { font-size: 20px; }
       .sc-label { font-size: 10px; }
-      /* Forms */
       .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
       .form-card { padding: 16px 18px; }
-      /* Tables */
       tbody td { padding: 10px 12px; font-size: 12px; }
       thead th { padding: 9px 12px; }
     }
@@ -571,12 +504,61 @@
       .stat-card { padding: 12px 14px; }
       .page-body { padding: 10px; padding-bottom: 76px; }
     }
+
+    /* Dashboard-specific */
+    .ticker-wrap {
+      background: var(--s1);
+      border-bottom: 1px solid var(--border);
+      height: 36px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .ticker-track {
+      display: flex;
+      gap: 32px;
+      white-space: nowrap;
+      animation: ticker 40s linear infinite;
+      padding: 0 16px;
+      height: 36px;
+      align-items: center;
+    }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .ticker-item { display: flex; gap: 8px; align-items: center; font-size: 12px; font-weight: 500; }
+    .ticker-sym  { color: var(--text2); font-weight: 600; }
+    .ticker-price { color: var(--text); }
+    .ticker-chg.up   { color: var(--green); }
+    .ticker-chg.down { color: var(--red); }
+
+    .donut-wrap { display: flex; align-items: center; gap: 24px; }
+    .donut-canvas { width: 120px !important; height: 120px !important; flex-shrink: 0; }
+    .donut-legend { flex: 1; }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .legend-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .nav-chart-wrap { height: 180px; }
+    .period-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .period-tab {
+      padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+      border: none; cursor: pointer; background: var(--s3); color: var(--text3);
+      transition: all .15s;
+    }
+    .period-tab.active { background: var(--orange); color: #fff; }
+
+    .pos-row-pnl { font-size: 12px; font-weight: 600; }
+    .dash-charts-row { display: grid; grid-template-columns: 1fr 320px; gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 768px) {
+      .dash-charts-row { grid-template-columns: 1fr; }
+      .nav-chart-wrap { height: 160px; }
+      .donut-wrap { gap: 16px; }
+      .donut-canvas { width: 90px !important; height: 90px !important; }
+    }
   </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- ── SIDEBAR ── -->
+  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-brand">
       <img src="https://ik.imagekit.io/hepilvh2p/TradePilot.jpeg?updatedAt=1778741097186" alt="TradePilot" class="brand-logo">
@@ -589,15 +571,15 @@
     <div class="sidebar-nav-wrap">
 
       <nav class="sidebar-nav">
-        <a href="{% url 'paper_trading:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">
+        <a href="#" class="active">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Dashboard
         </a>
-        <a href="{% url 'paper_trading:place_order' %}" class="{% block nav_order %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           Place Order
         </a>
-        <a href="{% url 'paper_trading:order_history' %}" class="{% block nav_orders %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
           Orders
         </a>
@@ -606,15 +588,15 @@
       <div class="sidebar-divider"><span>F&amp;O</span></div>
 
       <nav class="sidebar-nav">
-        <a href="{% url 'paper_trading:fno_dashboard' %}" class="{% block nav_fno %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
           Positions
         </a>
-        <a href="{% url 'paper_trading:fno_order' %}" class="{% block nav_fno_order %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           F&amp;O Trade
         </a>
-        <a href="{% url 'paper_trading:fno_order_history' %}" class="{% block nav_fno_hist %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           F&amp;O History
         </a>
@@ -623,11 +605,11 @@
       <div class="sidebar-divider"><span>Tools</span></div>
 
       <nav class="sidebar-nav">
-        <a href="{% url 'paper_trading:simulator' %}" class="{% block nav_sim %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           What-If
         </a>
-        <a href="{% url 'paper_trading:analytics' %}" class="{% block nav_analytics %}{% endblock %}">
+        <a href="#">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Analytics
         </a>
@@ -637,20 +619,18 @@
         <div class="promo-label">F&amp;O Simulator</div>
         <div class="promo-title">Practice Options &amp; Futures</div>
         <div class="promo-desc">Trade risk-free with virtual money. Full Greeks, margin &amp; expiry simulation.</div>
-        <a href="{% url 'paper_trading:fno_order' %}" class="promo-btn">Try F&amp;O Now</a>
+        <a href="#" class="promo-btn">Try F&amp;O Now</a>
       </div>
 
     </div>
 
     <div class="sidebar-profile">
-      <!-- Expandable panel (opens upward) -->
       <div class="profile-panel" id="profile-panel">
         <div class="profile-panel-inner">
           <div class="profile-cash-row">
             <div class="profile-cash-label">Available Cash</div>
-            <div class="profile-cash-val">{% block sidebar_cash %}—{% endblock %}</div>
+            <div class="profile-cash-val">₹4,23,180</div>
           </div>
-          <!-- Theme toggle -->
           <div class="theme-row">
             <span class="theme-row-label" id="theme-label">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" id="theme-icon">
@@ -662,38 +642,31 @@
               <span class="theme-knob"></span>
             </button>
           </div>
-
-          <form method="post" action="{% url 'logout' %}" style="margin:0;">
-            {% csrf_token %}
-            <button type="submit" class="profile-signout">
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-              Sign Out
-            </button>
-          </form>
+          <button type="button" class="profile-signout">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign Out
+          </button>
         </div>
       </div>
 
-      <!-- Profile trigger -->
-      {% if user.is_authenticated %}
       <div class="profile-trigger" id="profile-trigger" onclick="toggleProfile()">
-        <div class="profile-avatar">{{ user.username|first|upper }}</div>
+        <div class="profile-avatar">D</div>
         <div class="profile-info">
-          <div class="profile-name">{{ user.username }}</div>
+          <div class="profile-name">Demo User</div>
           <div class="profile-role">Paper Trader</div>
         </div>
         <svg class="profile-chevron" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="18 15 12 9 6 15"/>
         </svg>
       </div>
-      {% endif %}
     </div>
   </aside>
 
-  <!-- ── MAIN ── -->
+  <!-- MAIN -->
   <div class="main-wrap">
     <div class="topbar">
       <button class="hamburger-btn" onclick="toggleDrawer()" aria-label="Open menu">
@@ -701,41 +674,226 @@
           <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
         </svg>
       </button>
-      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
-      <div class="topbar-right">{% block topbar_right %}{% endblock %}</div>
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <a href="#" class="tb-btn">+ Place Order</a>
+        <a href="#" class="tb-btn-ghost">+ F&amp;O Order</a>
+      </div>
     </div>
     <div class="page-body">
-      {% if messages %}
-      <div class="messages">
-        {% for msg in messages %}
-        <div class="msg {% if msg.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ msg }}</div>
-        {% endfor %}
+
+      <!-- Ticker tape -->
+      <div class="ticker-wrap">
+        <div class="ticker-track" id="ticker-track">Loading market data…</div>
       </div>
-      {% endif %}
-      {% block content %}{% endblock %}
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid" style="margin-top:20px;">
+        <div class="stat-card c-orange">
+          <div class="sc-label">Portfolio Value</div>
+          <div class="sc-val">₹12,84,320</div>
+          <div class="sc-sub">Starting ₹10,00,000</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="sc-label">Available Cash</div>
+          <div class="sc-val">₹4,23,180</div>
+          <div class="sc-sub">Free to invest</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="sc-label">Unrealised P&amp;L</div>
+          <div class="sc-val up">₹32,450.00</div>
+          <div class="sc-sub">Open positions</div>
+        </div>
+        <div class="stat-card c-blue">
+          <div class="sc-label">Realised P&amp;L</div>
+          <div class="sc-val up">₹28,690.00</div>
+          <div class="sc-sub">Closed trades</div>
+        </div>
+        <div class="stat-card c-purple">
+          <div class="sc-label">Return</div>
+          <div class="sc-val up">+28.43%</div>
+          <div class="sc-sub">vs starting capital</div>
+        </div>
+        <div class="stat-card c-yellow">
+          <div class="sc-label">Daily P&amp;L</div>
+          <div class="sc-val up">₹4,230</div>
+          <div class="sc-sub">Today's change</div>
+        </div>
+      </div>
+
+      <!-- TWO COLUMN: NAV chart + Donut -->
+      <div class="dash-charts-row">
+        <div class="table-card" style="padding:20px;margin-bottom:0;">
+          <div class="section-hdr">
+            <div class="section-title">Portfolio NAV</div>
+            <div class="period-tabs">
+              <button class="period-tab" onclick="loadNav('1w',this)">1W</button>
+              <button class="period-tab" onclick="loadNav('1m',this)">1M</button>
+              <button class="period-tab" onclick="loadNav('3m',this)">3M</button>
+              <button class="period-tab active" onclick="loadNav('all',this)">All</button>
+            </div>
+          </div>
+          <div class="nav-chart-wrap"><canvas id="navChart"></canvas></div>
+        </div>
+
+        <div class="table-card" style="padding:20px;margin-bottom:0;">
+          <div class="section-title" style="margin-bottom:16px;">Allocation</div>
+          <div class="donut-wrap">
+            <canvas class="donut-canvas" id="donutChart"></canvas>
+            <div class="donut-legend" id="donut-legend"></div>
+          </div>
+          <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="color:var(--text3);">Cash</span>
+              <span>32.9%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="color:var(--text3);">Invested</span>
+              <span>67.1%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text3);">Unrealised Gain</span>
+              <span class="pnl-pos">+4.0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- POSITIONS TABLE -->
+      <div class="section-hdr">
+        <div class="section-title">Open Positions (3)</div>
+        <a href="#" class="section-link">+ Add position</a>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Company</th>
+                <th>Qty</th>
+                <th>Avg Buy</th>
+                <th>LTP</th>
+                <th>Invested</th>
+                <th>Current</th>
+                <th>P&amp;L</th>
+                <th>P&amp;L %</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-orange">RELIANCE</span></td>
+                <td style="color:var(--text2);">Reliance Industries Ltd.</td>
+                <td>100</td>
+                <td>₹3,214.50</td>
+                <td style="font-weight:600;">₹<span class="ltp-RELIANCE">3,245.20</span></td>
+                <td style="color:var(--text2);">₹3,21,450</td>
+                <td>₹3,24,520</td>
+                <td class="pnl-pos">₹3,070.00</td>
+                <td class="pnl-pos">+0.96%</td>
+                <td><a href="#" class="btn-action">Trade</a></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-orange">TCS</span></td>
+                <td style="color:var(--text2);">Tata Consultancy Services</td>
+                <td>50</td>
+                <td>₹3,964.60</td>
+                <td style="font-weight:600;">₹<span class="ltp-TCS">3,992.50</span></td>
+                <td style="color:var(--text2);">₹1,98,230</td>
+                <td>₹1,99,625</td>
+                <td class="pnl-pos">₹1,395.00</td>
+                <td class="pnl-pos">+0.70%</td>
+                <td><a href="#" class="btn-action">Trade</a></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-orange">HDFCBANK</span></td>
+                <td style="color:var(--text2);">HDFC Bank Ltd.</td>
+                <td>75</td>
+                <td>₹1,886.40</td>
+                <td style="font-weight:600;">₹<span class="ltp-HDFCBANK">1,924.80</span></td>
+                <td style="color:var(--text2);">₹1,41,480</td>
+                <td>₹1,44,360</td>
+                <td class="pnl-pos">₹2,880.00</td>
+                <td class="pnl-pos">+2.04%</td>
+                <td><a href="#" class="btn-action">Trade</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECENT ORDERS -->
+      <div class="section-hdr">
+        <div class="section-title">Recent Orders</div>
+        <a href="#" class="section-link">View all →</a>
+      </div>
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Symbol</th><th>Side</th><th>Type</th><th>Qty</th><th>Price</th><th>Total</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--text3);white-space:nowrap;">14 May, 10:32</td>
+                <td><span class="badge badge-orange">HDFCBANK</span></td>
+                <td><span class="pill pill-BUY">BUY</span></td>
+                <td style="color:var(--text3);">Market</td>
+                <td>75</td>
+                <td>₹1,886.40</td>
+                <td>₹1,41,480</td>
+                <td><span class="pill pill-EXECUTED">EXECUTED</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text3);white-space:nowrap;">13 May, 11:15</td>
+                <td><span class="badge badge-orange">TCS</span></td>
+                <td><span class="pill pill-BUY">BUY</span></td>
+                <td style="color:var(--text3);">Limit</td>
+                <td>50</td>
+                <td>₹3,964.60</td>
+                <td>₹1,98,230</td>
+                <td><span class="pill pill-EXECUTED">EXECUTED</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--text3);white-space:nowrap;">12 May, 09:47</td>
+                <td><span class="badge badge-orange">RELIANCE</span></td>
+                <td><span class="pill pill-BUY">BUY</span></td>
+                <td style="color:var(--text3);">Market</td>
+                <td>100</td>
+                <td>₹3,214.50</td>
+                <td>₹3,21,450</td>
+                <td><span class="pill pill-EXECUTED">EXECUTED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 
 </div>
+
 <!-- Drawer overlay (mobile) -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
 <!-- Mobile bottom nav -->
 <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
   <div class="mobile-bottom-nav-inner">
-    <a href="{% url 'paper_trading:dashboard' %}" class="mobile-nav-item" data-match="/paper-trading/">
+    <a href="#" class="mobile-nav-item active">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Home
     </a>
-    <a href="{% url 'paper_trading:place_order' %}" class="mobile-nav-item" data-match="/paper-trading/order/">
+    <a href="#" class="mobile-nav-item">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Order
     </a>
-    <a href="{% url 'paper_trading:fno_order' %}" class="mobile-nav-item" data-match="/paper-trading/fno/">
+    <a href="#" class="mobile-nav-item">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       F&amp;O
     </a>
-    <a href="{% url 'paper_trading:analytics' %}" class="mobile-nav-item" data-match="/paper-trading/analytics/">
+    <a href="#" class="mobile-nav-item">
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Analytics
     </a>
@@ -747,7 +905,7 @@
 </nav>
 
 <script>
-/* ── Profile panel toggle ── */
+/* Profile panel toggle */
 function toggleProfile() {
   const panel   = document.getElementById('profile-panel');
   const trigger = document.getElementById('profile-trigger');
@@ -763,7 +921,7 @@ document.addEventListener('click', function(e) {
   }
 });
 
-/* ── Mobile drawer ── */
+/* Mobile drawer */
 function toggleDrawer() {
   const sidebar  = document.querySelector('.sidebar');
   const overlay  = document.getElementById('drawer-overlay');
@@ -777,19 +935,8 @@ function closeDrawer() {
   document.getElementById('drawer-overlay')?.classList.remove('open');
   document.body.style.overflow = '';
 }
-/* Active state for mobile bottom nav */
-(function() {
-  const path = window.location.pathname;
-  document.querySelectorAll('.mobile-nav-item[data-match]').forEach(a => {
-    const match = a.getAttribute('data-match');
-    const isExact = match === '/paper-trading/';
-    if (isExact ? path === match : path.startsWith(match)) {
-      a.classList.add('active');
-    }
-  });
-})();
 
-/* ── Theme toggle ── */
+/* Theme toggle */
 const MOON_SVG = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
 const SUN_SVG  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 
@@ -803,19 +950,146 @@ function applyTheme(theme) {
   if (icon)  icon.innerHTML = isLight ? SUN_SVG : MOON_SVG;
   if (label) label.childNodes[label.childNodes.length - 1].textContent = isLight ? ' Light mode' : ' Dark mode';
 }
-
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const next    = current === 'light' ? 'dark' : 'light';
   localStorage.setItem('tp-theme', next);
   applyTheme(next);
 }
-
-/* Sync pill state on load */
 (function() {
   const saved = localStorage.getItem('tp-theme') || 'dark';
   applyTheme(saved);
 })();
+
+/* Ticker tape — static demo data */
+(function loadTicker() {
+  const tickers = [
+    { name: 'RELIANCE', price: 3245.20, change_pct: 0.96 },
+    { name: 'TCS',      price: 3992.50, change_pct: 0.70 },
+    { name: 'HDFCBANK', price: 1924.80, change_pct: 2.04 },
+    { name: 'INFY',     price: 1582.35, change_pct: -0.43 },
+    { name: 'WIPRO',    price: 498.60,  change_pct: 1.12 },
+    { name: 'ICICIBANK',price: 1312.40, change_pct: -0.28 },
+    { name: 'AXISBANK', price: 1189.75, change_pct: 0.55 },
+    { name: 'BAJFINANCE',price:7842.30, change_pct: -1.08 },
+    { name: 'SBIN',     price: 832.45,  change_pct: 1.33 },
+    { name: 'TATAMOTORS',price:962.10,  change_pct: 2.41 },
+  ];
+  const items = tickers.map(t => {
+    const up = t.change_pct >= 0;
+    return `<span class="ticker-item">
+      <span class="ticker-sym">${t.name}</span>
+      <span class="ticker-price">₹${t.price.toFixed(2)}</span>
+      <span class="ticker-chg ${up ? 'up' : 'down'}">${up ? '+' : ''}${t.change_pct.toFixed(2)}%</span>
+    </span>`;
+  });
+  document.getElementById('ticker-track').innerHTML = [...items, ...items].join('');
+})();
+
+/* NAV Chart — static demo data */
+const NAV_DATA = {
+  '1w': [
+    { time: '8 May',  value: 1241200 },
+    { time: '9 May',  value: 1256800 },
+    { time: '12 May', value: 1262400 },
+    { time: '13 May', value: 1271900 },
+    { time: '14 May', value: 1284320 },
+  ],
+  '1m': [
+    { time: '15 Apr', value: 1180000 },
+    { time: '18 Apr', value: 1195400 },
+    { time: '22 Apr', value: 1208700 },
+    { time: '25 Apr', value: 1221300 },
+    { time: '29 Apr', value: 1235600 },
+    { time: '5 May',  value: 1248900 },
+    { time: '9 May',  value: 1256800 },
+    { time: '14 May', value: 1284320 },
+  ],
+  '3m': [
+    { time: '17 Feb', value: 1040000 },
+    { time: '3 Mar',  value: 1065000 },
+    { time: '17 Mar', value: 1092000 },
+    { time: '31 Mar', value: 1118000 },
+    { time: '14 Apr', value: 1155000 },
+    { time: '28 Apr', value: 1228000 },
+    { time: '14 May', value: 1284320 },
+  ],
+  'all': [
+    { time: '1 Jan',  value: 1000000 },
+    { time: '1 Feb',  value: 1024000 },
+    { time: '1 Mar',  value: 1063000 },
+    { time: '1 Apr',  value: 1118000 },
+    { time: '1 May',  value: 1241200 },
+    { time: '14 May', value: 1284320 },
+  ],
+};
+
+let navChart;
+function loadNav(period, btn) {
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const d = NAV_DATA[period] || NAV_DATA['all'];
+  const labels = d.map(h => h.time);
+  const values = d.map(h => h.value);
+  if (navChart) navChart.destroy();
+  const ctx = document.getElementById('navChart').getContext('2d');
+  navChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249,115,22,.08)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#1a2540' }, ticks: { color: '#3d5470', maxTicksLimit: 6 } },
+        y: { grid: { color: '#1a2540' }, ticks: { color: '#3d5470', callback: v => '₹' + (v/100000).toFixed(1) + 'L' } }
+      }
+    }
+  });
+}
+loadNav('all', null);
+
+/* Donut chart — static demo data */
+(function() {
+  const labels = ['RELIANCE', 'TCS', 'HDFCBANK', 'Cash'];
+  const values = [324520, 199625, 144360, 423180];
+  const colors = ['#f97316','#3b82f6','#10b981','#8b5cf6'];
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false } },
+      responsive: false,
+    }
+  });
+  const leg = document.getElementById('donut-legend');
+  labels.forEach((l, i) => {
+    leg.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div><span style="color:var(--text2)">${l}</span></div>`;
+  });
+})();
+
+/* Simulated live price fluctuation */
+const BASE_PRICES = { RELIANCE: 3245.20, TCS: 3992.50, HDFCBANK: 1924.80 };
+setInterval(() => {
+  Object.entries(BASE_PRICES).forEach(([sym, base]) => {
+    const drift = (Math.random() - 0.5) * 2;
+    BASE_PRICES[sym] = +(BASE_PRICES[sym] + drift).toFixed(2);
+    const el = document.querySelector('.ltp-' + sym);
+    if (el) el.textContent = BASE_PRICES[sym].toLocaleString('en-IN', { minimumFractionDigits: 2 });
+  });
+}, 3000);
 </script>
 </body>
 </html>

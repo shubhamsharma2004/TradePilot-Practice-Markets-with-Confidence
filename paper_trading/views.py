@@ -706,18 +706,27 @@ def stock_ohlc_api(request):
     }
     yf_sym = _OHLC_INDEX_MAP.get(symbol, symbol + '.NS')
 
+    from django.core.cache import cache
+    cache_ttl = 60 if is_intraday else 600   # 1 min for intraday, 10 min for daily
+    cache_key = f'ohlc_{yf_sym}_{yf_period}_{yf_interval}'
+    cached_payload = cache.get(cache_key)
+    if cached_payload:
+        return JsonResponse(cached_payload)
+
     try:
-        ticker = yf.Ticker(yf_sym)
-        hist   = ticker.history(period=yf_period, interval=yf_interval)
+        import pandas as pd
+        hist = yf.download(yf_sym, period=yf_period, interval=yf_interval,
+                           progress=False, auto_adjust=True)
         if hist.empty:
             return JsonResponse({'error': 'No data'}, status=404)
+        if isinstance(hist.columns, pd.MultiIndex):
+            hist = hist.droplevel(1, axis=1)
 
         import pytz
         ist = pytz.timezone('Asia/Kolkata')
         candles = []
         for ts, row in hist.iterrows():
             if is_intraday:
-                # Convert to IST-aware timestamp so chart shows correct market hours
                 if ts.tzinfo is None:
                     ts = pytz.utc.localize(ts)
                 ts_ist = ts.astimezone(ist)
@@ -732,7 +741,9 @@ def stock_ohlc_api(request):
                 'close':  round(float(row['Close']), 2),
                 'volume': int(row['Volume']),
             })
-        return JsonResponse({'symbol': symbol, 'candles': candles, 'intraday': is_intraday})
+        payload = {'symbol': symbol, 'candles': candles, 'intraday': is_intraday}
+        cache.set(cache_key, payload, cache_ttl)
+        return JsonResponse(payload)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
