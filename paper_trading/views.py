@@ -5,6 +5,8 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
 from django.utils import timezone
 from django.http import JsonResponse
 
@@ -1117,3 +1119,17 @@ def fno_strikes_api(request):
         'strikes':  get_atm_strikes(spot, n=12),
         'lot_size': LOT_SIZES.get(underlying, DEFAULT_LOT_SIZE),
     })
+
+
+def signup(request):
+    if request.user.is_authenticated:
+        return redirect('paper_trading:dashboard')
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('paper_trading:dashboard')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
